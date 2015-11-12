@@ -111,20 +111,20 @@
 \maketitle
 
 \begin{abstract}
-We present a bluetooth based multiplayer game called AirHockey 3X. The game is based on the real-life game air hockey. In contrast to the original game, our adaption allows from two to four players to play together. The game is supported on Android\texttrademark.
+We present a Bluetooth based multiplayer game called AirHockey 3X. The game is based on the real-life game air hockey. In contrast to the original game, our adaption allows from two to four players to play together. The game is supported on Android\texttrademark.
 \end{abstract}
 
 \section{Introduction}
 
-\paragraph{Air Hockey} Let us start by a few words of explanation about the game itself. Air hockey is played on specific air hockey table. The table consists of a big smooth surface, which is surrounded by a rail. There is a slot at either end of the table. Furthermore, there is a machinery which generates a cushion of air to reduce the puck's friction and increase its speed. Two players play against each other. Their main objective is to play the plastic puck into the opponents slot by using a mallet.
+\paragraph{Air Hockey} Let us start by a few words of explanation about the game itself. Air hockey is played on a specific air hockey table. The table consists of a big smooth surface, which is surrounded by a rail. There is a slot at either end of the table. Furthermore, there is a machinery which generates a cushion of air to reduce the puck's friction and increase its speed. Two players play against each other. Their objective is to play the plastic puck into the opponents slot by using a mallet.
 
 \paragraph{Our Adaption} The main conceptual difference between our adaption of air hockey and the original game is the following: We allow for more than two players. In the case where three or four players decide to challenge each other, the pitch changes from rectangle to triangle or to a square respectively. The idea is that the participants of a specific instance of a game sit in a circular fashion next to each other. We recommend sitting around a table. Compare Figure 2.
 
 Each player has his own mallet on his screen and may play the virtual puck to any of the other players. If player \textit{A} play the puck to player \textit{B} the puck leaves player \textit{A}'s screen and enters player \textit{B}'s screen after some delay for traversing the invisible pitch between the mobiles. Note that it is important for the players to remain in the same relative position to each other during the game.
 
-\paragraph{Distributed Systems Component} We base our underlying communication layer on a simplified peer-to-peer bluetooth network. In particular we distanciate ourselves from the perhaps more popular client-server model. In our setting, each player represents a node witch equal rights. The advantage of this approach is \todo{(?)...} that each participant can run the same protocol and uses the same amount of resources. 
+\paragraph{Distributed Systems Component} We base our underlying communication layer on a simplified peer-to-peer Bluetooth network. In particular we distanciate ourselves from the perhaps more popular client-server model. In our setting, each player represents a node with equal rights. The advantage of this approach is \todo{(?)...} that each participant can run the same protocol and uses the same amount of resources. 
 
-Important aspects are to synchronize global state changes, e.g. player scores or wheter the game is being paused, among all participants and to send the information about the puck, i.e. speed or angle of incdence, to the right opponent. The challenge is to design a reliable protocol which guarantees real-time constraints and therefore makes a and dynamic user experience possible. \todo{(?)...}
+Important aspects are to synchronize global state changes, e.g. player scores or wheter the game is being paused, among all participants and to send the information about the puck, that is speed or angle of incidence, to the right opponent. The challenge is to design a reliable protocol which guarantees real-time constraints and therefore makes a dynamic user experience possible. \todo{(?)...}
 
 \section{System Overview}
 
@@ -135,13 +135,13 @@ It follows a short description of the app flow. The reader may refer to Figure 1
  Upon opening the app, the user sees a start-screen $(1)$ with two main buttons, namely the \textit{start} button and the \textit{settings} button. 
 
 \paragraph{Settings Screen}
-Pressing the \textit{settings} button, leads to the settings-screen. The user may select his usernamer which gets shown to other players. Furthermore, \todo{(?)...}
+Pressing the \textit{settings} button, leads to the settings-screen. The user may select his usernamer which gets shown to other players during the game. Furthermore, \todo{(?)...}
 
 \paragraph{Ready Screen}
-If the user hits the \textit{start} button, he gets directed to the ready-screen $(2)$. The ready-screen serves the purpose of setting up the new game. Each player is first asked to select the number of players. As soon as the choice is done he sees, a schematic topology of the players next to each other, himself being at the bottom. This schema helps new users to understand how the game is to be played; compare Figure 2. The user needs to select his opponents in order to start the game. He does so, by tapping on each of the other players on the schema, and selecting his Bluetooth device from list, which appeard next to the player. All players must add all of their opponents; this way we can make sure that all the players consent to play against each other. Note at this point the neccessity that player \textit{A} needs to add player \textit{B} in the same relative position. For example, if player \textit{A} adds \textit{B} to the right \textit{B} must add \textit{A} to the left. If an error occurs, which includes a wrong topology such as \textit{A} left to \textit{B} and \textit{B} left to \textit{A} or not all of the players have the same list of participants, a respective error message is displayed. If everything went fine, meaning all players have the same player topology on their respective screens, the user taps the \textit{ready} button and as soon as everyone did so, gets directed to the game-screen after a short countdown.
+If the user hits the \textit{start} button, he gets directed to the ready-screen $(2)$. The ready-screen serves the purpose of setting up the new game. One player clicks the start button and gets directed to the ready-screen. He gets shown a schematic view of the game topology as seen on Figure 3 \todo{insert figure}. The player can now choose his opponents from a list of Bluetooth devices and assign them to their position around the pitch. Every player, who has been chosen, receives an invitation in form of a confirmation dialog. If he accepts this invitation, he sees an "uneditable" ready-screen with the game setup. When the game setup is complete (all the players have been chosen and accepted the invitation), every player can mark himself as ready by toggle the \textit{ready} button. As soon as all players are ready, the game starts after a short countdown.
 
 \paragraph{Game-Screen}
-Once in the game-screen the participants play until the first hits the maximum number of points. All players see a dialog presenting the winner and get asked if they want to play a new game. If everyone selects this option, the new game starts after a short countdown. At any point in time any player may pause the game and all the the players see a pause dialog. As soon as everyone tapped the continue button, the game resumes. If a player decides to quit the game by closing the app, the game is ended and his opponents are shown an error dialog and directed back to the start screen.
+Once in the game-screen, the participants play until the first hits the maximum number of points. All players see a dialog presenting the winner and get asked if they want to play a new game. If everyone selects this option, the new game starts after a short countdown. At any point in time any player may pause the game and all the the players see a pause dialog. As soon as everyone tapped the continue button, the game resumes. If a player decides to quit the game by closing the app, the game is ended and his opponents are shown an error dialog and directed back to the start screen.
 
 \begin{figure}[h]
 	\centering
@@ -156,35 +156,30 @@ Once in the game-screen the participants play until the first hits the maximum n
     \includegraphics[width=\columnwidth]{overview.jpg}
     \lfig{system-overview}
     \vspace{-5mm} % use negative white space to fix too large gaps
-	\caption{Schematic topology of players as shown on ready-screen}
+	\caption{Schematic topology of players as shown on ready-screen This is only editable for the player which sends invitations. For all other players it is just a schematic visualization of the game.}
 \end{figure}
 
-\subsection{Communication via Bluetooth} We discuss in this section how the communication between the players works in general fashion. Our communication layer is based on the Bluetooth technology; we use the provided android Bluetooth API. Furthermore, we encode all messages that are sent among the devices as JSON.
+\subsection{Communication via Bluetooth} We discuss in this section how the communication between the players works in a general fashion. Our communication layer is based on the Bluetooth technology; we use the provided android Bluetooth API. 
+
+The communication layer serves as crucial level of abstraction. The objective of our design is to provide a realiable and real-time able underlying message passing system. The upper layers of our application, such as the game logic or the view controllers, can use the communication layer as simple interface to send messages to other participants, without having to know anything about Bluetooth.
 
 \paragraph{Messages}
-\todo{elaborate}
-We use JSON encoding for our messages. Each messages is composed of a header and a body. The header contains the senders id, the message type and ... . The body contains the payload which is specific to the message type.
+We use JSON to encode our messages. Each message is composed of a header and a body. The header contains the senders id and the message type. The body contains the payload which is specific to the message type.
 
 \paragraph{Setup Phase}
-This is the phase, during which the players add each other to their game. In the following we explain the behaviour for three players.  The setup phase gets started as soon as the user got directed to the \textit{ready-screen}. Each participant wants to fill its own representation of the player topology whith his counterplayers. The goal is to reach a state where all the participant have stored the same topology and are paired with each other. This way everyone knows where the others are and may choose to connect to either of them in order to send a message.\\
+This is the phase, during which the players add each other to their game. All participants maintain a local copy of the schematic game topology. The goal is that at the end of the phase, each player knows where all the other players are and is paired with all of them. That way quick connections to the devices are possible.\\
 
-\textbf{Topology} Imagine a local topology as shown in Figure 3 \todo{Add figure}. Each participant sees himself as number one. It is important to see, that a participant can reason out who, i.e. which position in the topology, sent a message, provided that the message contains the participants position as seen from the sender. This is easy to verify, because there is exactly one possible sender, which has the participant at this particular position. 
+\textbf{Sender's Perspective} One of the players, which need verbaly be agreed upon, enters the \textit{ready-screen} by tapping on the \textit{start} button. Let us call this player thereafter the 'sender'. His device starts scanning for other Bluetooth devices. (Naturally everyone needs to turn on Bluetooth on their device to b e able to play). As he taps on one of his opponent's position on the schematic game topology displayed on his screen, a list with Bluetooth devices shows up. He can now choose one of his opponents; a Bluetooth connection gets established and an inivtation messege gets sent. The message carries the current state of the setup to the other player, this includes the position of said player and the the position of the sender. If the other player responds positively to the invitation, the sender assigns the other player to the respective position in the topology and may proceed adding players until all are set.\\
 
-A specific position in the local topology can attain three different states. The are \textit{vacant}, \textit{remembered} and \textit{set}. A position is \textit{set} only if an opponent has succesfully been assigned to it. \textit{Remembed} denotes the state when a participant received a request and replied with an \textit{acknowledgment}. In this case the player, who has sent the request, has successfully added the recipient to his topology. The recipient stores the other players id into his own topology and marks it as \textit{remembered}. All positions that ar neither in the \textit{set} nor in the \textit{remembered} state, are in the \textit{vacant state}. Note that the own position is always in the \textit{set} state.
+\textbf{Receiver's Perspective} All the other participants of the game need to wait for an invitation of the sender. As soon as they get an invitation from the sender, they get shown a invitation dialog and can either accept or deny. If they accept, the Bluetooth connection gets established to the sender and they receive the information about the current state of the setup phase, e.g. which position was assigned to them and at which position the sender is. The user gets directed to an "uneditable" ready-screen, where he sees the schematic topology of the game with his position and the sender's position already filled in.\\
 
-Consider following example: Player \textit{A}'s device sends a message to player \textit{B}'s with the information that \textit{B} is at position 2. \textit{B} knows now that \textit{A} must be at position 3. Note that this is only possible because all players know the number of total players.\\
+\textbf{Wrapping up} We arrived at the point where the sender knows the position of all the other players. All the other players must have accepted the invitation and have sent back a message to the sender saying so. The sender now iterates through  the list of all his counterplayers and sends them the complete topology by again establishing a Bluetooth connection to the respective devices and sending messages. Each player is now able to update his knwoledge about the topology and also to show this to the user on the screen. The recipients have now the possibility to press the \textit{ready} button. Then a message gets sent back to the sender, saying that this particular player is ready. As the sender got all ready messages, the sender's user can himself hit the \textit{ready} button and a start message gets broadcasted to all players. Once received a start message, each player gets shown a short timer after which the game starts. This concludes the setup phase.
 
-\textbf{Sending a Request} Each device starts with scanning its local area for other Bluetooth devices. The list of found devices gets displayed to the user as he taps to choose his opponents. Once the user seleceted one opponent from said list and the position is in the \textit{vacant} state, the user sends a \textit{request} message to the selected opponent. In the case where the position is in the \textit{remembered} state, the user must first check if the selected opponent matches the stored player at this position. If this is the case, it is made sure that both parties store each other at the correct relative position; the request gets send. If however, the players do not match, the request must be aborted, because otherwise a wrong topology gets established. The message carries the opponents relative position to the user and the users player name.\\
-
-\textbf{Receiving a Request} Upon receiving a request, the recipient reasons out at which position the sender must be. He then checks if the respective position in his local topology is still free. If it is still \textit{vacant}, he sends an \textit{acknowledgment} back to the sender and remembers the sender's id in the respective position. On the other hand, the position in in the topology might not be \textit{vacant}. In this case the recipient replyies to the sender by an \textit{error} message.\\
-
-\textbf{Ready} As soon as a participant has its topology filled, he sends a \textit{ready} message to all the other players. Once done this, and received the ready message from the other players, the participant knows that all players are ready. The player with the lowest id broadcasts a \textit{start} message and the game starts after a short countdown. This concludes the setup phase. 
-
-\paragraph{During the game} Each player is in the situation that he knows where all his opponents are locatet relative to him. Furthermore, the player's device is paired with all the other devices and thus ready to initiate a connection for sending a message to either of them.
+\paragraph{During the game} Each player is in the situation that he knows where all his opponents are located relative to him. Furthermore, the player's device is paired with all the other devices and thus ready to initiate a connection for sending a message to either of them.
 
 Player \textit{A} sends a message to player \textit{B} if the puck leaves player \textit{A}'s screen and is about to enter player \textit{B}'s. The information sent along is such that player \textit{B} knows when to display the puck where, in which angle, and with wich speed. Note, that only player \textit{B} gets notified about the arriving puck.
 
-There are broadcast messages being sent, if a player scores a goal or wins, a player pauses the game or someone leaves the game.
+There are broadcast messages being sent, if a player scores a goal or wins, a player pauses the game or someone leaves the game; in general: global events.
 
 \subsection{Game Physics and Graphics} We will use \todo{library ... } 
 
@@ -193,18 +188,33 @@ There are broadcast messages being sent, if a player scores a goal or wins, a pl
 Describe system setup, components, external libraries, hardware etc.
 
 \section{Work Packages}
-Breakdown the work to subtasks to meet the project requirements.
-Define and describe these tasks.
+It follows a breakdown of the work to be done. We group the different tasks into work packages. Each work group may either belong to the category Communication $(1)$, Application $(2)$, Game $(3)$ or Miscellaneous $(4)$.
 
 \begin{itemize}
-        \item {\bf WP1}:  XYZ  \ldots    
-        \item {\bf WP2}: Set and Configuring Backend Serve  \ldots    
-        \item {\bf WP3}: Integration  \ldots 
-         \item {\bf WPx}:  \ldots 
+        \item {\bf WP01:  Basic app architecture.} Set up all the activities with their buttons, images and further view objects. Make sure that \textit{settings-screen} and \textit{main-screen} work also in portrait format. $(2)$
+        
+        \item {\bf WP02: Desgin \textit{ready-screen}.} Provide schematics of the game topology. Each player position can be displayed as empty or occupied by some player. Also make sure that the sender can tap on empty positions and gets shwon a list, which can be filled by Bluetooth devices. $(2)$
+        
+        \item {\bf WP03: Design \textit{settings-screen}.} Fine tune all the settings. Also handle storing and loading from shared preferences. $(2)$
+        
+        \item {\bf WP04: Messages.} Model messages based on JSON. Provide methods to initialize each message type and methods to extract the appropriate information again. $(1)$
+        
+        \item {\bf WP05: Basic Bluetooth.} Design interface to client classes, in particular methods to get a all the players to send messages to a specific player at a specific position. Implement scanning for devices, establishing connections and sending messages. $(1)$
+        
+        \item {\bf WP06: Setup Phase.} Handle all the logic happening during the setup phase. This includes scanning for Bluetooth devices, pairing with them, maintain a list of all the players devices. Also, several rounds of message passing need to be done. The game topology needs to be passed on to the game logic, once the setup phase is done. $(1)$
+        
+         \item {\bf WP07: Implement coherent physics engine.} Design a framework to be used for the puck's position, speed and direction. Collisions on the rails and mallets must be handled. $(3)$
+         
+        	\item {\bf WP08: Game graphics.} Design the \textit{game-screen}. This includes the pitch, displaying the scores of each player and further graphic elements. Also important are the images of a mallet and the puck. $(3)$
+	
+	\item {\bf WP09: Game logic.} Actually make the game happen. Start the game, then use the physics engine and the communication layer to notify the appropriate players as needed. Display the puck, with its speed, on the right player's device. Also manage the game state, e.g. all the points, or when to end the game because someone won. $(3)$
+
+         \item {\bf WP10:  Testing} Aside from continueous testing, which is done throughout the course of the project, this final testing phase is used to conquer all remaining problems. $(4)$
+         
+         \item {\bf WP11: Preparation for the presentation.} Create slides and prepare demo session and rehearse. $(4)$
+         
 \end{itemize}
  
-Stick to a concise, scientific writing style. 
-
 \section{Milestones}
 The milestones section provides a work plan for carrying out the project.
 This is your schedule for getting the project done.
