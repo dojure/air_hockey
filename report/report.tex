@@ -10,6 +10,13 @@
 \usepackage{enumitem}
 \usepackage{url}
 
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{lscape}
+\usepackage{rotating}
+\usepackage{caption}
+\usepackage{epstopdf}
+
 
 \usepackage{color}
 \definecolor{orange}{rgb}{1,0.5,0}
@@ -97,10 +104,10 @@
 % e-mail address with \email.
 %
 % 1st. author
-\alignauthor \normalsize{Basile Maret, Philipp Rimmle, Etienne de Stoutz}\\
+\alignauthor \normalsize{Basile Maret, Philipp Rimle, Etienne de Stoutz}\\
 \normalsize{Oliver Butz, Raphael Schnider, Valentin Venzin}\\
 	\affaddr{\normalsize{ETH ID-1 13-937-974, ETH ID-2 13-913-595, ETH ID-3 13-920-418}}\\
-	\affaddr{\normalsize{ETH ID-4 XX-XXX-XXX, ETH ID-5 13-933-205, ETH ID-6 13-916-895}}\\
+	\affaddr{\normalsize{ETH ID-4 13-921-069, ETH ID-5 13-933-205, ETH ID-6 13-916-895}}\\
 	\email{\normalsize{bmaret@student.ethz.ch, primle@student.ethz.ch, etienned@student.ethz.ch}}
 	\email{\normalsize{oliverknu@student.ethz.ch, sraphael@student.ethz.ch, vvenzin@student.ethz.ch}}
 }
@@ -118,13 +125,13 @@ We present a Bluetooth based multiplayer game called AirHockey 3X. The game is b
 
 \paragraph{Air Hockey} Let us start by a few words of explanation about the game itself. Air hockey is played on a specific air hockey table. The table consists of a big smooth surface, which is surrounded by a rail. There is a slot at either end of the table. Furthermore, there is a machinery which generates a cushion of air to reduce the puck's friction and increase its speed. Two players play against each other. Their objective is to play the plastic puck into the opponents slot by using a mallet.
 
-\paragraph{Our Adaption} The main conceptual difference between our adaption of air hockey and the original game is the following: We allow for more than two players. In the case where three or four players decide to challenge each other, the pitch changes from rectangle to triangle or to a square respectively. The idea is that the participants of a specific instance of a game sit in a circular fashion next to each other. We recommend sitting around a table. Compare Figure 2.
+\paragraph{Our Adaption} The main conceptual difference between our adaption of air hockey and the original game is the following: We allow for more than two players. In the case where three or four players decide to challenge each other, the pitch changes from rectangle to triangle or to a square respectively. Refer to Figure 2 for a schematic setup of the game. The idea is that the participants of a specific instance of a game sit in a circular fashion next to each other. We recommend sitting around a table. Compare Figure 2.
 
 Each player has his own mallet on his screen and may play the virtual puck to any of the other players. If player \textit{A} play the puck to player \textit{B} the puck leaves player \textit{A}'s screen and enters player \textit{B}'s screen after some delay for traversing the invisible pitch between the mobiles. Note that it is important for the players to remain in the same relative position to each other during the game.
 
-\paragraph{Distributed Systems Component} We base our underlying communication layer on a simplified peer-to-peer Bluetooth network. In particular we distanciate ourselves from the perhaps more popular client-server model. In our setting, each player represents a node with equal rights. The advantage of this approach is \todo{(?)...} that each participant can run the same protocol and uses the same amount of resources. 
+\paragraph{Distributed Systems Component} We base our underlying communication layer on a simplified peer-to-peer Bluetooth network. In particular we distanciate ourselves from the perhaps more popular client-server model. In our setting, each player represents a node with equal rights. The advantage of this approach is that each participant can run the same protocol and uses the same amount of resources. 
 
-Important aspects are to synchronize global state changes, e.g. player scores or wheter the game is being paused, among all participants and to send the information about the puck, that is speed or angle of incidence, to the right opponent. The challenge is to design a reliable protocol which guarantees real-time constraints and therefore makes a dynamic user experience possible. \todo{(?)...}
+Important aspects are to synchronize global state changes, e.g. player scores or wheter the game is being paused, among all participants and to send the information about the puck, that is speed or angle of incidence, to the right opponent. The challenge is to design a reliable protocol which guarantees real-time constraints and therefore makes a dynamic user experience possible.
 
 \section{System Overview}
 
@@ -135,10 +142,10 @@ It follows a short description of the app flow. The reader may refer to Figure 1
  Upon opening the app, the user sees a start-screen $(1)$ with two main buttons, namely the \textit{start} button and the \textit{settings} button. 
 
 \paragraph{Settings Screen}
-Pressing the \textit{settings} button, leads to the settings-screen. The user may select his usernamer which gets shown to other players during the game. Furthermore, \todo{(?)...}
+Pressing the \textit{settings} button, leads to the settings-screen. The user may select his usernamer which gets shown to other players during the game. Further game specific settings may be set here.
 
 \paragraph{Ready Screen}
-If the user hits the \textit{start} button, he gets directed to the ready-screen $(2)$. The ready-screen serves the purpose of setting up the new game. One player clicks the start button and gets directed to the ready-screen. He gets shown a schematic view of the game topology as seen on Figure 3 \todo{insert figure}. The player can now choose his opponents from a list of Bluetooth devices and assign them to their position around the pitch. Every player, who has been chosen, receives an invitation in form of a confirmation dialog. If he accepts this invitation, he sees an "uneditable" ready-screen with the game setup. When the game setup is complete (all the players have been chosen and accepted the invitation), every player can mark himself as ready by toggle the \textit{ready} button. As soon as all players are ready, the game starts after a short countdown.
+If the user hits the \textit{start} button, he gets directed to the ready-screen $(2)$. The ready-screen serves the purpose of setting up the new game. One player clicks the start button and gets directed to the ready-screen. He gets shown a schematic view of the game topology as seen on Figure 2. The name of the player will be shown inside the screen and not any of the game action. The player can now choose his opponents from a list of Bluetooth devices and assign them to their position around the pitch. Every player, who has been chosen, receives an invitation in form of a confirmation dialog. If he accepts this invitation, he sees an "uneditable" ready-screen with the game setup. When the game setup is complete (all the players have been chosen and accepted the invitation), every player can mark himself as ready by toggle the \textit{ready} button. As soon as all players are ready, the game starts after a short countdown.
 
 \paragraph{Game-Screen}
 Once in the game-screen, the participants play until the first hits the maximum number of points. All players see a dialog presenting the winner and get asked if they want to play a new game. If everyone selects this option, the new game starts after a short countdown. At any point in time any player may pause the game and all the the players see a pause dialog. As soon as everyone tapped the continue button, the game resumes. If a player decides to quit the game by closing the app, the game is ended and his opponents are shown an error dialog and directed back to the start screen.
@@ -153,10 +160,10 @@ Once in the game-screen, the participants play until the first hits the maximum 
 
 \begin{figure}[h]
 	\centering
-    \includegraphics[width=\columnwidth]{overview.jpg}
+    \includegraphics[width=\columnwidth]{topology.png}
     \lfig{system-overview}
     \vspace{-5mm} % use negative white space to fix too large gaps
-	\caption{Schematic topology of players as shown on ready-screen This is only editable for the player which sends invitations. For all other players it is just a schematic visualization of the game.}
+	\caption{Schematic setup of the game. This topology gets also shown on the ready-screen, altough without any of the game action. The names of the players will be displayed inside the screen instead.}
 \end{figure}
 
 \subsection{Communication via Bluetooth} We discuss in this section how the communication between the players works in a general fashion. Our communication layer is based on the Bluetooth technology; we use the provided android Bluetooth API. 
@@ -183,12 +190,18 @@ There are broadcast messages being sent, if a player scores a goal or wins, a pl
 
 \subsection{Game Physics and Graphics} We will use \todo{library ... } 
 
-
 \section{Requirements}
-Describe system setup, components, external libraries, hardware etc.
+A short listing of our requirements.
+
+\begin{itemize}
+        \item We will be targeting the minimum SDK version: API 18: Android 4.3 (Jelly Bean) to be sure that we can use the Bluetooth API without any problems.
+        \item The commuincation layer is based on Bluetooth low energy (BLE). To that end, we make use of the provided android Bluetooth API.
+        \item We use built in android JSON API for the messages.
+        \item The graphical part of the game is based on \todo{graphic library}.
+\end{itemize}
 
 \section{Work Packages}
-It follows a breakdown of the work to be done. We group the different tasks into work packages. Each work group may either belong to the category Communication $(1)$, Application $(2)$, Game $(3)$ or Miscellaneous $(4)$.
+It follows a breakdown of the work to be done. We group the different tasks into work packages. Each work package may either belong to the category Communication $(1)$, Application $(2)$, Game $(3)$ or Miscellaneous $(4)$.
 
 \begin{itemize}
         \item {\bf WP01:  Basic app architecture.} Set up all the activities with their buttons, images and further view objects. Make sure that \textit{settings-screen} and \textit{main-screen} work also in portrait format. $(2)$
@@ -216,9 +229,18 @@ It follows a breakdown of the work to be done. We group the different tasks into
 \end{itemize}
  
 \section{Milestones}
-The milestones section provides a work plan for carrying out the project.
-This is your schedule for getting the project done.
-Clearly state how the work packages will be distributed among the team members. 
+We provide our work plan in form of the table seen in Figure 3 below. Note tha the length of the period during which the wroking package is to be worked on, does not indicate the amount of work that is to be done. The time assigned to each package depends on the dependecies among the tasks. For instance, WP01 surely needs to be done before WP03. WP07 on the other hand is mostly independent from the other packages and can thus pe worked on during a longer period of time. 
+
+\begin{landscape}
+ \begin{figure}
+  \centering
+  \includegraphics[scale=0.6]{working_plan.png}
+  \caption{\textbf{Work Plan.} \\ \textmd{Legend: BM=Basile Maret, PR=Philipp Rimle, ED=Etienne de Stoutz, OB=Oliver Butz, RS=Raphael Schnider, VV=Valentin Venzin}}
+ \end{figure}
+\end{landscape}
+
+
+
 % The following two commands are all you need in the
 % initial runs of your .tex file to
 % produce the bibliography for the citations in your paper.
