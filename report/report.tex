@@ -188,7 +188,7 @@ Player \textit{A} sends a message to player \textit{B} if the puck leaves player
 
 There are broadcast messages being sent, if a player scores a goal or wins, a player pauses the game or someone leaves the game; in general: global events.
 
-\subsection{Game Physics and Graphics} We will use \todo{library ... } 
+\subsection{Game Physics and Graphics} We forward touch events to a refresh rate independent game loop where we compute dynamics and collision detection between our local physical objects, the puck, the mallet, and the rails. These game elements are rendered with OpenGL ES 2.0 as simple geometric shapes. The physics engine does not simply keep a single state up to date. It must compute the future trajectory of the puck after each shot, in order to determine which player to notify about handling the puck next.
 
 \section{Requirements}
 A short listing of our requirements.
@@ -197,7 +197,7 @@ A short listing of our requirements.
         \item We will be targeting the minimum SDK version: API 18: Android 4.3 (Jelly Bean) to be sure that we can use the Bluetooth API without any problems also for BLE.
         \item The commuincation layer is based on Bluetooth low energy (BLE). To that end, we make use of the provided android Bluetooth API.
         \item We use the built in android JSON API for the messages.
-        \item The graphical part of the game is based on the openGL ES 3.0 library.
+        \item The graphical part of the game is based on the openGL ES 2.0 library.
 \end{itemize}
 
 \section{Work Packages}
