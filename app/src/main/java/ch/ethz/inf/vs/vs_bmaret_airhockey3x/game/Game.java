@@ -16,9 +16,9 @@ public class Game {
         return ourInstance;
     }
 
-    private int nrPlayer;
+    private int mNrPlayer;
 
     private Game() {}
 
-    public void setNrPlayer(int nr) {nrPlayer = nr;}
+    public void setNrPlayer(int nr) {mNrPlayer = nr;}
 }

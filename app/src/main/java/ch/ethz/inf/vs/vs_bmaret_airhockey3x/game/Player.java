@@ -6,11 +6,11 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.game;
 
 public class Player {
 
-    private final int id;
+    private final int mId;
 
-    Player(int pId)
+    Player(int id)
     {
-        id = pId;
+        mId = id;
     }
 
 

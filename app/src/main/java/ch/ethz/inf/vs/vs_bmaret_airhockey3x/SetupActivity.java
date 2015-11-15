@@ -3,14 +3,11 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,11 +19,11 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
 
     final static String LOGTAG = "SetupActivity";
 
-    private Game game;
-    private BluetoothComm bc;
-    private ListView devicesListView;
-    private ArrayAdapter<String> adapter;
-    private ImageButton[] imageButtons = new ImageButton[3];
+    private Game mGame;
+    private BluetoothComm mBc;
+    private ListView mDevicesListView;
+    private ArrayAdapter<String> mAdapter;
+    private ImageButton[] mImageButtons = new ImageButton[3];
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -35,25 +32,25 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         setContentView(R.layout.activity_setup);
 
         ImageButton b1 = (ImageButton) findViewById(R.id.player1_btn);
-        imageButtons[0] = b1;
+        mImageButtons[0] = b1;
         b1.setOnClickListener(this);
         ImageButton b2 = (ImageButton) findViewById(R.id.player2_btn);
-        imageButtons[1] = b2;
+        mImageButtons[1] = b2;
         b2.setOnClickListener(this);
         ImageButton b3 = (ImageButton) findViewById(R.id.player3_btn);
-        imageButtons[2] = b3;
+        mImageButtons[2] = b3;
         b3.setOnClickListener(this);
 
         showDialog();
 
-        devicesListView = (ListView) findViewById(R.id.devices_list);
+        mDevicesListView = (ListView) findViewById(R.id.devices_list);
         setEnableListView(false);
 
-        bc = new BluetoothComm(this, getApplicationContext());
+        mBc = new BluetoothComm(this, getApplicationContext());
 
         // Create Game
-        game = Game.getInstance();
-        game.setNrPlayer(3); // TODO: Extraxt from dialog and put in here
+        mGame = Game.getInstance();
+        mGame.setNrPlayer(3); // TODO: Extraxt from dialog and put in here
     }
 
 
@@ -65,7 +62,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
     public void onClick(View b)
     {
         // Deselect all others
-        for (ImageButton ib : imageButtons) {
+        for (ImageButton ib : mImageButtons) {
             if(!b.equals(ib)) ib.setSelected(false);
         }
         setEnableListView(true);
@@ -82,7 +79,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         }
         // Check if no button is selected -> need to disable list
         boolean sel = false;
-        for (ImageButton ib : imageButtons) {
+        for (ImageButton ib : mImageButtons) {
             if(ib.isSelected()) sel = true;
         }
         if (!sel) setEnableListView(false);
@@ -91,14 +88,14 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
     // Populate listview as soon as devices found or changed
     public void onDeviceFound(String name)
     {
-        if (adapter == null) {
+        if (mAdapter == null) {
             List<String> names = new ArrayList<>();
             names.add(name);
-            adapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,names);
-            devicesListView.setAdapter(adapter);
+            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,names);
+            mDevicesListView.setAdapter(mAdapter);
         } else {
-            adapter.add(name);
-            adapter.notifyDataSetChanged();
+            mAdapter.add(name);
+            mAdapter.notifyDataSetChanged();
         }
     }
 
@@ -120,12 +117,12 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         dialog.create().show();
     }
 
-    // Enable/disable devicesListView. Need to do the fading manually
+    // Enable/disable mDevicesListView. Need to do the fading manually
     private void setEnableListView(boolean enable)
     {
-        devicesListView.setEnabled(enable);
-        if (enable) devicesListView.setAlpha((float) 1);
-        else devicesListView.setAlpha((float) 0.5);
+        mDevicesListView.setEnabled(enable);
+        if (enable) mDevicesListView.setAlpha((float) 1);
+        else mDevicesListView.setAlpha((float) 0.5);
 
     }
 

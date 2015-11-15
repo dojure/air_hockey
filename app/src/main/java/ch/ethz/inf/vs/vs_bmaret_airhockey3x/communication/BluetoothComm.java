@@ -8,9 +8,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
 /**
  * Created by Valentin on 14/11/15.
@@ -20,32 +24,33 @@ import java.util.Set;
  *
  */
 
-public class BluetoothComm {
+public class BluetoothComm implements BluetoothServicesListener {
 
     // Constants
     private final String LOGTAG = "BluetoothComm";
 
-    private BluetoothCommListener listener; // Allow only one listener
-    private Context context;
-    private BluetoothAdapter bluetoothAdapter;
-    private Boolean scanning = false;
+    private BluetoothCommListener mListener; // Allow only one mListener
+    private Context mContext;
+    private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothServices mBS;
+    private Boolean mScanning = false;
 
-    private List<BluetoothDevice> devices = new ArrayList<>();
-    private List<BluetoothDevice> pairedDevices = new ArrayList<>();
+    private List<BluetoothDevice> mDevices = new ArrayList<>();
+    private List<BluetoothDevice> mPairedDevices = new ArrayList<>();
 
 
 
     public BluetoothComm(BluetoothCommListener lis, Context appContext)
     {
-        listener = lis;
+        mListener = lis;
 
         // Get Bluetooth adapter
-        context = appContext;
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mContext = appContext;
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         // Ensures Bluetooth is available on the device and it is enabled. If not,
         // displays a dialog requesting user permission to enable Bluetooth.
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
             Log.d(LOGTAG,"Bluetooth not enabled");
 
             // TODO: Show this in Activity somehow
@@ -53,22 +58,22 @@ public class BluetoothComm {
             //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
 
-        // Add already paired devices - maybe do more intelligently
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        // Add already paired mDevices - maybe do more intelligently
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         for (BluetoothDevice d : pairedDevices) {
             Log.d(LOGTAG, "Device already paired: " + d.getName());
 
-            // Should we only consider devices with nonnull name??
+            // Should we only consider mDevices with nonnull name??
             if (d != null && d.getName() != null) {
-                devices.add(d);
+                mDevices.add(d);
                 pairedDevices.add(d);
-                listener.onDeviceFound(d.getName());
+                mListener.onDeviceFound(d.getName());
             }
         }
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
-        context.registerReceiver(receiver,filter);
+        mContext.registerReceiver(receiver, filter);
         scan();
     }
 
@@ -76,12 +81,22 @@ public class BluetoothComm {
     // Let client unregister - 'this' is not needed anymore -> do cleanup
     public void unregisterListener(BluetoothCommListener lis)
     {
-        if (listener == lis) { // Must be same listener of course
-            listener = null;
-            context.unregisterReceiver(receiver);
+        mBS.unregisterListener(this);
+        if (mListener == lis) { // Must be same mListener of course
+            mListener = null;
+            mContext.unregisterReceiver(receiver);
         }
     }
 
+    /**
+     *
+     * @param msg       msg to be sent
+     * @param receiver  Player to receive it
+     */
+    public void sendMessageToPlayer(JSONObject msg, Player receiver)
+    {
+
+    }
 
     // Listener to device scan
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -93,29 +108,40 @@ public class BluetoothComm {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 Log.d(LOGTAG,"Found device " + device.getName());
                 // If it's already paired, skip it, because it's been listed already
-                if (device != null && device.getBondState() != BluetoothDevice.BOND_BONDED && !devices.contains(device)) {
+                if (device != null && device.getBondState() != BluetoothDevice.BOND_BONDED && !mDevices.contains(device)) {
 
-                    // Consider only devices with nonnull name??
+                    // Consider only mDevices with nonnull name??
                     if (device.getName() != null) {
-                        devices.add(device);
-                        listener.onDeviceFound(device.getName());
+                        mDevices.add(device);
+                        mListener.onDeviceFound(device.getName());
                     }
                 }
             } else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 // Scan done
-                scanning = false;
+                mScanning = false;
             }
         }
     };
 
-    // Scan for devices and store into devices field
+    // Scan for mDevices and store into mDevices field
     private void scan()
     {
-        if(!scanning) {
-            scanning = true;
-            bluetoothAdapter.startDiscovery();
+        if(!mScanning) {
+            mScanning = true;
+            mBluetoothAdapter.startDiscovery();
         }
     }
 
+
+    /**
+     *
+     * BluetoothServices callbacks
+     *
+     */
+
+    public void onReceiveBytes(byte[] bytes)
+    {
+
+    }
 
 }
