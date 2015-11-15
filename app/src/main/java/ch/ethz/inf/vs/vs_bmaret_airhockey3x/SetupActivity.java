@@ -3,25 +3,29 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.List;
 
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommunicaiton;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommunicationListener;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Game;
 
-public class SetupActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommunicationListener {
+public class SetupActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommListener {
 
     final static String LOGTAG = "SetupActivity";
 
     private Game game;
-    private BluetoothCommunicaiton bc;
+    private BluetoothComm bc;
     private ListView devicesListView;
+    private ArrayAdapter<String> adapter;
     private ImageButton[] imageButtons = new ImageButton[3];
 
     @Override
@@ -45,7 +49,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         devicesListView = (ListView) findViewById(R.id.devices_list);
         setEnableListView(false);
 
-        bc = new BluetoothCommunicaiton(this);
+        bc = new BluetoothComm(this, getApplicationContext());
 
         // Create Game
         game = Game.getInstance();
@@ -85,10 +89,17 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
     }
 
     // Populate listview as soon as devices found or changed
-    public void onDeviceListChanged(List<String> names)
+    public void onDeviceFound(String name)
     {
-        ListAdapter adapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,names);
-        devicesListView.setAdapter(adapter);
+        if (adapter == null) {
+            List<String> names = new ArrayList<>();
+            names.add(name);
+            adapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,names);
+            devicesListView.setAdapter(adapter);
+        } else {
+            adapter.add(name);
+            adapter.notifyDataSetChanged();
+        }
     }
 
 

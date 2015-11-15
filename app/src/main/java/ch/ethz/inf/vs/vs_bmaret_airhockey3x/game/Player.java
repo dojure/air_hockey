@@ -5,4 +5,13 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.game;
  */
 
 public class Player {
+
+    private final int id;
+
+    Player(int pId)
+    {
+        id = pId;
+    }
+
+
 }
