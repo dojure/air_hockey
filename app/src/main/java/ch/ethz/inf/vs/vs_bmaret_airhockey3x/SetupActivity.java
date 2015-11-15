@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -20,7 +21,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
     final static String LOGTAG = "SetupActivity";
 
     private Game mGame;
-    private BluetoothComm mBc;
+    private BluetoothComm mBC;
     private ListView mDevicesListView;
     private ArrayAdapter<String> mAdapter;
     private ImageButton[] mImageButtons = new ImageButton[3];
@@ -44,15 +45,29 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         showDialog();
 
         mDevicesListView = (ListView) findViewById(R.id.devices_list);
+        mDevicesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View arg1, int position, long arg3) {
+                String entry = (String) parent.getItemAtPosition(position);
+                mBC.connectTo(entry);
+            }
+        });
         setEnableListView(false);
 
-        mBc = new BluetoothComm(this, getApplicationContext());
+        mBC = new BluetoothComm(this, getApplicationContext());
+        mBC.scan();
 
         // Create Game
         mGame = Game.getInstance();
         mGame.setNrPlayer(3); // TODO: Extraxt from dialog and put in here
     }
 
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        mBC.unregisterListener(this);
+    }
 
     /**
      * The idea is that the user clicks on one of the other players squares and that he can then

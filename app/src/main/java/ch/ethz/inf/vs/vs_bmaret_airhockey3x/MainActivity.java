@@ -5,13 +5,21 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+import java.util.ArrayList;
+import java.util.List;
 
-    final static String LOGTAG = "MainActivity";
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
 
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommListener {
+
+    private final static String LOGTAG = "MainActivity";
+
+    private BluetoothComm mBC;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -23,6 +31,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         b.setOnClickListener(this);
         b = (Button) findViewById(R.id.settings_btn);
         b.setOnClickListener(this);
+
+        mBC = new BluetoothComm(this, getApplicationContext());
+        mBC.listen(); // Start listening for incoming connections
     }
 
     @Override
@@ -40,6 +51,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //  portrait
             linearLayout.setOrientation(LinearLayout.VERTICAL);
         }
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        mBC.unregisterListener(this);
     }
 
     @Override
@@ -72,4 +90,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
     }
+
+    public void onDeviceFound(String name) {} // Callback dont needed
+
 }

@@ -2,6 +2,7 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
@@ -22,13 +23,14 @@ public class BluetoothServices {
     private final String LOGTAG = "BluetoothServices";
 
     // Unique UUID for this application - ??
-    private static final UUID MY_UUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
-
+    private static final UUID MUUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
+    private static final String NAME = "AirHockey3X";
 
     private BluetoothServicesListener mListener; // Allow only one mListener
     private final BluetoothAdapter mAdapter;
     private ConnectThread mConnectThread;
     private TransmissionThread mTransmissionThread;
+    private ListenThread mListenThread;
     private int mState = STATE_NONE;
 
     // Current connection state
@@ -49,6 +51,7 @@ public class BluetoothServices {
     public void stopAll()
     {
         Log.d(LOGTAG,"Stop all threads");
+
         // Cancel any threads currently trying to establish connection to other
         if (mConnectThread != null) {
             mConnectThread.cancel();
@@ -58,6 +61,11 @@ public class BluetoothServices {
         if (mTransmissionThread != null) {
             mTransmissionThread.cancel();
             mTransmissionThread = null;
+        }
+        // Cancel all threads that are listening
+        if (mListenThread != null) {
+            mListenThread.cancel();
+            mListenThread = null;
         }
         mState = STATE_NONE;
     }
@@ -70,6 +78,45 @@ public class BluetoothServices {
         }
     }
 
+    /**
+     * Listen for incoming connections
+     */
+    public void listen()
+    {
+        Log.d(LOGTAG,"Start listening for connections");
+
+        // Cancel any threads currently trying to establish connection to other
+        if (mConnectThread != null) {
+            mConnectThread.cancel();
+            mConnectThread = null;
+        }
+        // Cancel all threads doing transmissions
+        if (mTransmissionThread != null) {
+            mTransmissionThread.cancel();
+            mTransmissionThread = null;
+        }
+
+        if (mListenThread == null) {
+            mListenThread = new ListenThread();
+            mListenThread.start();
+        }
+        mState = STATE_LISTEN;
+    }
+
+    /**
+     * Send bytes to connected device
+     * @param bytes Bytes to send
+     */
+    public void send(byte[] bytes)
+    {
+        TransmissionThread r;
+        synchronized (this) {
+            if(mState != STATE_CONNECTED) return;
+            r = mTransmissionThread;
+        }
+        r.send(bytes); // Send unsnchronized
+
+    }
 
     /**
      * Initiate new connection to remote device.
@@ -121,13 +168,82 @@ public class BluetoothServices {
         mTransmissionThread = new TransmissionThread(socket);
         mTransmissionThread.start();
 
+        mListener.onConnected(device); // Notify listener about connected device
         mState = STATE_CONNECTED;
     }
-
 
     private void connectionFailed()
     {
         Log.d(LOGTAG,"Connection failed");
+    }
+
+
+    /**
+     *
+     * Threads
+     *
+     */
+
+
+    /**
+     * Thread that listens for incoming connections
+     */
+    private class ListenThread extends Thread {
+
+        private final BluetoothServerSocket mServerSocket;
+
+        public ListenThread()
+        {
+            BluetoothServerSocket tmp = null;
+
+            try {
+                tmp = mAdapter.listenUsingRfcommWithServiceRecord(NAME, MUUID);
+            } catch (IOException e) {e.printStackTrace();}
+            mServerSocket = tmp;
+        }
+
+        public void run()
+        {
+            Log.d(LOGTAG,"Begin ListenThread");
+
+            BluetoothSocket socket = null;
+
+            while (mState != STATE_CONNECTED) {
+                try {
+                    socket = mServerSocket.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    break;
+                }
+            }
+
+            if(socket != null) {
+                Log.d(LOGTAG, "Successfully connected to " + socket.getRemoteDevice().getName());
+
+                synchronized (BluetoothServices.this) {
+                    switch (mState) {
+                        case STATE_LISTEN:
+                        case STATE_CONNECTING:
+                            // All ok
+                            transmit(socket,socket.getRemoteDevice());
+                            break;
+                        case STATE_NONE:
+                        case STATE_CONNECTED:
+                            // Not ready or already connected
+                            try {
+                                socket.close();
+                            } catch (IOException e) {e.printStackTrace();}
+                    }
+                }
+            }
+        }
+
+        public void cancel()
+        {
+            try {
+                mServerSocket.close();
+            } catch (IOException e) {e.printStackTrace();}
+        }
     }
 
 
@@ -146,7 +262,7 @@ public class BluetoothServices {
 
             // Get a BluetoothSocket for a connection with device
             try {
-                tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
+                tmp = device.createRfcommSocketToServiceRecord(MUUID);
             } catch (IOException e) {e.printStackTrace();}
             mSocket = tmp;
         }
@@ -164,6 +280,7 @@ public class BluetoothServices {
                 // successful connection or an exception
                 mSocket.connect();
             } catch (IOException e) {
+                e.printStackTrace();
                 connectionFailed();
                 // Close the socket
                 try {
@@ -194,7 +311,7 @@ public class BluetoothServices {
     }
 
     /**
-     * This thread handles all incoming and outgoind transmissions
+     * This thread handles all incoming and outgoing transmissions
      */
     private class TransmissionThread extends Thread {
 
@@ -230,8 +347,9 @@ public class BluetoothServices {
             while(true) {
             try {
                 mIn.read(buf);
-                mListener.onReceiveBytes(buf); // Tell listener about received bytes
-
+                synchronized (mListener) {
+                    mListener.onReceiveBytes(buf); // Tell listener about received bytes
+                }
             } catch (IOException e) {
                 // TODO: Handle error while receiving like connection loss
                 e.printStackTrace();

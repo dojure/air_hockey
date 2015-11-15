@@ -71,10 +71,11 @@ public class BluetoothComm implements BluetoothServicesListener {
             }
         }
 
+        mBS = new BluetoothServices(this);
+
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         mContext.registerReceiver(receiver, filter);
-        scan();
     }
 
 
@@ -84,9 +85,29 @@ public class BluetoothComm implements BluetoothServicesListener {
         mBS.unregisterListener(this);
         if (mListener == lis) { // Must be same mListener of course
             mListener = null;
-            mContext.unregisterReceiver(receiver);
+            mContext.unregisterReceiver(receiver); // TODO: Not working? get all devices found twice in LOG?
         }
     }
+
+    /**
+     * Try to connect to device with given name
+     * @param name  Name of device
+     */
+    public void connectTo(String name)
+    {
+        // Just connect to first with this name. Maybe we should base decision on other factor?
+        for (BluetoothDevice d : mDevices) {
+            if(d.getName().equals(name)) {
+                mBS.connect(d);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Listen for incoming connections
+     */
+    public void listen() { mBS.listen();}
 
     /**
      *
@@ -95,8 +116,9 @@ public class BluetoothComm implements BluetoothServicesListener {
      */
     public void sendMessageToPlayer(JSONObject msg, Player receiver)
     {
-
+        // TODO
     }
+
 
     // Listener to device scan
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -123,9 +145,12 @@ public class BluetoothComm implements BluetoothServicesListener {
         }
     };
 
-    // Scan for mDevices and store into mDevices field
-    private void scan()
+    /**
+     *  Scan for remote devices
+     */
+    public void scan()
     {
+        // TODO: Listener only gets new devices. Somehow callback him with already paired devices
         if(!mScanning) {
             mScanning = true;
             mBluetoothAdapter.startDiscovery();
@@ -142,6 +167,18 @@ public class BluetoothComm implements BluetoothServicesListener {
     public void onReceiveBytes(byte[] bytes)
     {
 
+    }
+
+    public void onConnected(BluetoothDevice device)
+    {
+        // TODO: Somehow link this device to the player which it belongs to. We do however not want to
+        // pass the device object to listener.
+
+        Log.d(LOGTAG, "Connected to " + device.getName() + " send mock message");
+
+        // Send test message
+        byte[] msg = new MessageFactory().createMessage(MessageFactory.MOCK_MESSAGE,-1,null);
+        mBS.send(msg);
     }
 
 }
