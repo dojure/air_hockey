@@ -9,7 +9,7 @@ import org.json.JSONObject;
  * Defines all messages that can be sent. Provides methods to get message.
  *
  */
-public class messageFactory {
+public class MessageFactory {
 
     // Define types
     public final static String MOCK_MESSAGE = "mock";
@@ -20,7 +20,7 @@ public class messageFactory {
     private final static String PLAYER_KEY = "player";
     private final static String TYPE_KEY = "type";
 
-    public messageFactory() {}
+    public MessageFactory() {}
 
     // Returns player id of sender
     public int getSender(JSONObject msg)
@@ -71,3 +71,4 @@ public class messageFactory {
 
 
 }
+
