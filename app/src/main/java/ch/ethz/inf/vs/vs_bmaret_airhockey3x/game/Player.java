@@ -8,7 +8,7 @@ public class Player {
 
     private final int mId;
 
-    Player(int id)
+    public Player(int id)
     {
         mId = id;
     }

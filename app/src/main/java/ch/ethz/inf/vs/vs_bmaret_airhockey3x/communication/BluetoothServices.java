@@ -167,9 +167,9 @@ public class BluetoothServices {
 
         mTransmissionThread = new TransmissionThread(socket);
         mTransmissionThread.start();
+        mState = STATE_CONNECTED;
 
         mListener.onConnected(device); // Notify listener about connected device
-        mState = STATE_CONNECTED;
     }
 
     private void connectionFailed()
@@ -215,26 +215,28 @@ public class BluetoothServices {
                     e.printStackTrace();
                     break;
                 }
-            }
 
-            if(socket != null) {
-                Log.d(LOGTAG, "Successfully connected to " + socket.getRemoteDevice().getName());
 
-                synchronized (BluetoothServices.this) {
-                    switch (mState) {
-                        case STATE_LISTEN:
-                        case STATE_CONNECTING:
-                            // All ok
-                            transmit(socket,socket.getRemoteDevice());
-                            break;
-                        case STATE_NONE:
-                        case STATE_CONNECTED:
-                            // Not ready or already connected
-                            try {
-                                socket.close();
-                            } catch (IOException e) {e.printStackTrace();}
+                if(socket != null) {
+                    Log.d(LOGTAG, "Successfully connected to " + socket.getRemoteDevice().getName());
+
+                    synchronized (BluetoothServices.this) {
+                        switch (mState) {
+                            case STATE_LISTEN:
+                            case STATE_CONNECTING:
+                                // All ok
+                                transmit(socket,socket.getRemoteDevice());
+                                break;
+                            case STATE_NONE:
+                            case STATE_CONNECTED:
+                                // Not ready or already connected
+                                try {
+                                    socket.close();
+                                } catch (IOException e) {e.printStackTrace();}
+                        }
                     }
                 }
+
             }
         }
 
@@ -346,9 +348,9 @@ public class BluetoothServices {
             // Receiving
             while(true) {
             try {
-                mIn.read(buf);
+                int n = mIn.read(buf);
                 synchronized (mListener) {
-                    mListener.onReceiveBytes(buf); // Tell listener about received bytes
+                    mListener.onReceiveBytes(buf, n); // Tell listener about received bytes
                 }
             } catch (IOException e) {
                 // TODO: Handle error while receiving like connection loss

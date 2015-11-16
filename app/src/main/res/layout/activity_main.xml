@@ -33,6 +33,7 @@ android:weightSum="1">
         android:id="@+id/textView"
         android:layout_below="@+id/tile"
         android:layout_centerHorizontal="true" />
+
 </RelativeLayout>
 
 <RelativeLayout
@@ -68,6 +69,16 @@ android:weightSum="1">
             android:textSize="25sp" />
 
     </LinearLayout>
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Join"
+        android:id="@+id/join_check_box"
+        android:checked="false"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true" />
+
 </RelativeLayout>
 
 </LinearLayout>

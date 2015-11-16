@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
@@ -32,8 +33,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         b = (Button) findViewById(R.id.settings_btn);
         b.setOnClickListener(this);
 
+        CheckBox cb = (CheckBox) findViewById(R.id.join_check_box);
+        cb.setOnClickListener(this);
+
         mBC = new BluetoothComm(this, getApplicationContext());
-        mBC.listen(); // Start listening for incoming connections
+        //mBC.listen(); // Start listening for incoming connections
     }
 
     @Override
@@ -88,6 +92,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Intent i1 = new Intent(this, SettingsActivity.class);
                 startActivity(i1);
                 break;
+            case R.id.join_check_box:
+                mBC.listen(((CheckBox) b).isChecked());
         }
     }
 

@@ -3,6 +3,8 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+
 /**
  * Created by Valentin on 15/11/15.
  *
@@ -21,6 +23,38 @@ public class MessageFactory {
     private final static String TYPE_KEY = "type";
 
     public MessageFactory() {}
+
+    /**
+     * Converter msg -> bytes
+     * @param msg   Message in form of JSONObject
+     * @return      bytes representing the message
+     */
+    static byte[] msgToBytes(JSONObject msg)
+    {
+        if (msg != null) return msg.toString().getBytes();
+        else return null;
+    }
+
+    /**
+     * Converter bytes -> msg
+     * @param bytes     bytes representing a JSONObject
+     * @param noBytes   number of bytes in bytes
+     * @return          Message in form of JSONObject
+     */
+    static JSONObject bytesToMsg(byte[] bytes, int noBytes)
+    {
+        // TODO: Handle cases where bytes are not actually a msg
+        JSONObject msg = null;
+        try {
+            if (bytes != null && bytes.length != 0) {
+                String tmp = new String(bytes, 0, noBytes, "UTF-8");
+                msg = new JSONObject(tmp);
+            }
+        } catch (JSONException e) {e.printStackTrace();}
+        catch (UnsupportedEncodingException e) {e.printStackTrace();}
+        return msg;
+    }
+
 
     // Returns player id of sender
     public int getSender(JSONObject msg)
@@ -54,7 +88,7 @@ public class MessageFactory {
      * @param body      Body of message, use provided method for respective type to create body
      * @return          byte array ready to send - may change to JSONObj and then seperately conv to bytes
      */
-    public byte[] createMessage(String type, int playerId, JSONObject body)
+    public JSONObject createMessage(String type, int playerId, JSONObject body)
     {
         JSONObject msg = new JSONObject();
         JSONObject header = new JSONObject();
@@ -66,9 +100,8 @@ public class MessageFactory {
             msg.put(BODY_KEY,body);
         } catch (JSONException e) {e.printStackTrace();}
 
-        return msg.toString().getBytes();
+        return msg;
     }
-
 
 }
 
