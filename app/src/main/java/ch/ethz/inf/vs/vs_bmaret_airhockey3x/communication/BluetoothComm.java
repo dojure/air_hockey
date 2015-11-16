@@ -34,6 +34,7 @@ public class BluetoothComm implements BluetoothServicesListener {
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothServices mBS;
     private Boolean mScanning = false;
+    private Boolean mEnable = false;
 
     private List<BluetoothDevice> mDevices = new ArrayList<>();
     private List<BluetoothDevice> mPairedDevices = new ArrayList<>();
@@ -56,36 +57,38 @@ public class BluetoothComm implements BluetoothServicesListener {
             // TODO: Show this in Activity somehow
             //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        }
+        } else {
+            // Add already paired mDevices - maybe do more intelligently
+            Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+            for (BluetoothDevice d : pairedDevices) {
+                Log.d(LOGTAG, "Device already paired: " + d.getName());
 
-        // Add already paired mDevices - maybe do more intelligently
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-        for (BluetoothDevice d : pairedDevices) {
-            Log.d(LOGTAG, "Device already paired: " + d.getName());
-
-            // Should we only consider mDevices with nonnull name??
-            if (d != null && d.getName() != null) {
-                mDevices.add(d);
-                pairedDevices.add(d);
-                mListener.onDeviceFound(d.getName());
+                // Should we only consider mDevices with nonnull name??
+                if (d != null && d.getName() != null) {
+                    mDevices.add(d);
+                    pairedDevices.add(d);
+                    mListener.onDeviceFound(d.getName());
+                }
             }
+
+            mBS = new BluetoothServices(this);
+
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(BluetoothDevice.ACTION_FOUND);
+            mContext.registerReceiver(receiver, filter);
         }
-
-        mBS = new BluetoothServices(this);
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        mContext.registerReceiver(receiver, filter);
     }
 
 
     // Let client unregister - 'this' is not needed anymore -> do cleanup
     public void unregisterListener(BluetoothCommListener lis)
     {
-        mBS.unregisterListener(this);
-        if (mListener == lis) { // Must be same mListener of course
-            mListener = null;
-            mContext.unregisterReceiver(receiver); // TODO: Not working? get all devices found twice in LOG?
+        if (mEnable) {
+            mBS.unregisterListener(this);
+            if (mListener == lis) { // Must be same mListener of course
+                mListener = null;
+                mContext.unregisterReceiver(receiver); // TODO: Not working? get all devices found twice in LOG?
+            }
         }
     }
 
@@ -95,11 +98,13 @@ public class BluetoothComm implements BluetoothServicesListener {
      */
     public void connectTo(String name)
     {
-        // Just connect to first with this name. Maybe we should base decision on other factor?
-        for (BluetoothDevice d : mDevices) {
-            if(d.getName().equals(name)) {
-                mBS.connect(d);
-                break;
+        if (mEnable) {
+            // Just connect to first with this name. Maybe we should base decision on other factor?
+            for (BluetoothDevice d : mDevices) {
+                if(d.getName().equals(name)) {
+                    mBS.connect(d);
+                    break;
+                }
             }
         }
     }
@@ -150,10 +155,12 @@ public class BluetoothComm implements BluetoothServicesListener {
      */
     public void scan()
     {
-        // TODO: Listener only gets new devices. Somehow callback him with already paired devices
-        if(!mScanning) {
-            mScanning = true;
-            mBluetoothAdapter.startDiscovery();
+        if (mEnable) {
+            // TODO: Listener only gets new devices. Somehow callback him with already paired devices
+            if(!mScanning) {
+                mScanning = true;
+                mBluetoothAdapter.startDiscovery();
+            }
         }
     }
 
