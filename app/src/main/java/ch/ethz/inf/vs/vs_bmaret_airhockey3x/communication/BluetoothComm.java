@@ -177,7 +177,7 @@ public class BluetoothComm implements BluetoothServicesListener {
         Log.d(LOGTAG, "Connected to " + device.getName() + " send mock message");
 
         // Send test message
-        byte[] msg = new messageFactory().createMessage(messageFactory.MOCK_MESSAGE,-1,null);
+        byte[] msg = new MessageFactory().createMessage(MessageFactory.MOCK_MESSAGE,-1,null);
         mBS.send(msg);
     }
 
