@@ -52,9 +52,9 @@ public class messageFactory {
      * @param type      Type of message
      * @param playerId  Sender id
      * @param body      Body of message, use provided method for respective type to create body
-     * @return          msg in form of JSON Object
+     * @return          byte array ready to send - may change to JSONObj and then seperately conv to bytes
      */
-    public JSONObject createMessage(String type, int playerId, JSONObject body)
+    public byte[] createMessage(String type, int playerId, JSONObject body)
     {
         JSONObject msg = new JSONObject();
         JSONObject header = new JSONObject();
@@ -66,7 +66,7 @@ public class messageFactory {
             msg.put(BODY_KEY,body);
         } catch (JSONException e) {e.printStackTrace();}
 
-        return msg;
+        return msg.toString().getBytes();
     }
 
 
