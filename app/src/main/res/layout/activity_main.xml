@@ -73,7 +73,7 @@ android:weightSum="1">
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Join"
+        android:text="Discoverable"
         android:id="@+id/join_check_box"
         android:checked="false"
         android:layout_alignParentBottom="true"

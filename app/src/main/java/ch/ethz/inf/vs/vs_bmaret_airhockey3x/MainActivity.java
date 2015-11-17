@@ -1,26 +1,34 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.MessageFactory;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommListener {
 
     private final static String LOGTAG = "MainActivity";
 
     private BluetoothComm mBC;
+    private MessageFactory mMF = new MessageFactory();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -37,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         cb.setOnClickListener(this);
 
         mBC = new BluetoothComm(this, getApplicationContext());
-        //mBC.listen(); // Start listening for incoming connections
+        mBC.listen(true); // Start listening for incoming connections
     }
 
     @Override
@@ -93,10 +101,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 startActivity(i1);
                 break;
             case R.id.join_check_box:
-                mBC.listen(((CheckBox) b).isChecked());
+                if (((CheckBox) b).isChecked()) {
+                    mBC.discoverable();
+                }
         }
     }
 
     public void onDeviceFound(String name) {} // Callback dont needed
+    public void onReceiveMessage(JSONObject msg)
+    {
+        final JSONObject finalMsg = msg;
+        if (msg != null){
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                    alertDialog.setTitle("DEBUG");
+                    alertDialog.setMessage("Got a message !! Receiver at pos: "
+                            + Integer.toString(mMF.getSender(finalMsg)) + " Message type: " +
+                            mMF.getType(finalMsg));
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            });
+                    alertDialog.show();
+                }
+            });
 
+        } else Log.d(LOGTAG, "Message was null");
+    }
 }

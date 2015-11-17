@@ -132,12 +132,23 @@
             style="?android:attr/buttonStyleSmall"
             android:layout_width="50dp"
             android:layout_height="wrap_content"
-            android:text="test msg"
-            android:id="@+id/test_msg_btn"
+            android:text="test msg p1"
+            android:id="@+id/test_msg_btn1"
             android:layout_alignParentTop="true"
             android:layout_alignParentStart="true"
             android:layout_toStartOf="@+id/player2_btn"
             android:textSize="10sp" />
+
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:text="test msg p3"
+            android:id="@+id/test_msg_btn3"
+            android:textSize="10sp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_toEndOf="@+id/player2_btn" />
 
     </RelativeLayout>
 </LinearLayout>

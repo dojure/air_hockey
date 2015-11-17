@@ -31,6 +31,7 @@ public class BluetoothServices {
     private ConnectThread mConnectThread;
     private TransmissionThread mTransmissionThread;
     private ListenThread mListenThread;
+    private byte[] mQueuedBytes = null;
     private int mState = STATE_NONE;
 
     // Current connection state
@@ -48,9 +49,9 @@ public class BluetoothServices {
     /**
      * Cancel all threads
      */
-    public void stopAll()
+    public void disconnect()
     {
-        Log.d(LOGTAG,"Stop all threads");
+        Log.d(LOGTAG,"Disconnect - Stop all threads");
 
         // Cancel any threads currently trying to establish connection to other
         if (mConnectThread != null) {
@@ -99,23 +100,32 @@ public class BluetoothServices {
         if (mListenThread == null) {
             mListenThread = new ListenThread();
             mListenThread.start();
-        }
+        } else Log.d(LOGTAG,"Listen thread already running");
+
         mState = STATE_LISTEN;
     }
 
     /**
-     * Send bytes to connected device
-     * @param bytes Bytes to send
+     * Send bytes to remote device
+     * If receiver is null, send to connected device if any, if receiver is not null,
+     * establish connection then send.
+     * @param receiver  receiver of message
+     * @param bytes       Bytes to send
      */
-    public void send(byte[] bytes)
+    public void send(BluetoothDevice receiver, byte[] bytes)
     {
         TransmissionThread r;
         synchronized (this) {
-            if(mState != STATE_CONNECTED) return;
+            if(mState != STATE_CONNECTED) {
+                Log.d(LOGTAG,"Cant send bytes because not connected yet -> connect first");
+                connect(receiver);
+                mQueuedBytes = bytes;
+                return;
+            }
             r = mTransmissionThread;
         }
+        Log.d(LOGTAG, "Sending bytes");
         r.send(bytes); // Send unsnchronized
-
     }
 
     /**
@@ -159,6 +169,12 @@ public class BluetoothServices {
             mConnectThread = null;
         }
 
+        // Cancel all listen threads
+        if (mListenThread != null) {
+            mListenThread.cancel();
+            mListenThread = null;
+        }
+
         // Cancel all threads doing transmissions
         if (mTransmissionThread != null) {
             mTransmissionThread.cancel();
@@ -168,6 +184,15 @@ public class BluetoothServices {
         mTransmissionThread = new TransmissionThread(socket);
         mTransmissionThread.start();
         mState = STATE_CONNECTED;
+
+        // Send queued message if any
+        if (mQueuedBytes != null) {
+            Log.d(LOGTAG, "Sending queued bytes");
+            mTransmissionThread.send(mQueuedBytes);
+            mQueuedBytes = null;
+            // TODO: Want to disconnect now
+        }
+
 
         mListener.onConnected(device); // Notify listener about connected device
     }
@@ -238,10 +263,12 @@ public class BluetoothServices {
                 }
 
             }
+            Log.d(LOGTAG,"End ListenThread");
         }
 
         public void cancel()
         {
+            Log.d(LOGTAG,"Cancel ListenThread - closing socket");
             try {
                 mServerSocket.close();
             } catch (IOException e) {e.printStackTrace();}
@@ -304,7 +331,7 @@ public class BluetoothServices {
 
         public void cancel()
         {
-            Log.d(LOGTAG,"Cancel ConnectThread");
+            Log.d(LOGTAG,"Cancel ConnectThread - closing socket");
             try {
                 mSocket.close();
             } catch (IOException e) {e.printStackTrace();}
@@ -353,8 +380,11 @@ public class BluetoothServices {
                     mListener.onReceiveBytes(buf, n); // Tell listener about received bytes
                 }
             } catch (IOException e) {
-                // TODO: Handle error while receiving like connection loss
+                Log.d(LOGTAG, "Connection lost - listen thread should be running");
+                mState = STATE_LISTEN;
+                listen();
                 e.printStackTrace();
+                return;
             }
 
             }
@@ -375,7 +405,7 @@ public class BluetoothServices {
 
         public void cancel()
         {
-            Log.d(LOGTAG,"Cancel TransmissionThread");
+            Log.d(LOGTAG,"Cancel TransmissionThread - closing socket.");
             try {
                 mSocket.close();
             } catch (IOException e) {e.printStackTrace();}

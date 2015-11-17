@@ -10,6 +10,5 @@ import org.json.JSONObject;
 public interface BluetoothServicesListener {
 
     void onReceiveBytes(byte[] bytes, int noBytes);
-
     void onConnected(BluetoothDevice device);
 }

@@ -40,8 +40,7 @@ public class BluetoothComm implements BluetoothServicesListener {
     // Be carful to keep this consistent
     private List<BluetoothDevice> mDevices = new ArrayList<>(); // List of paired and discovered devices
     private List<BluetoothDevice> mPairedDevices = new ArrayList<>(); // List of paired devices
-    private BluetoothDevice[] mPlayerDevices = new BluetoothDevice[3]; // Array of counterplayer devices
-    private int mCurrentPlayer = -1;
+    private Player mCurrentPlayer = null;
 
 
 
@@ -99,31 +98,41 @@ public class BluetoothComm implements BluetoothServicesListener {
     }
 
     /**
-     * Try to connect to device with given name
-     * @param name  Name of device
+     * Requests paired device for given player
+     * @param player    Player to whom the device should be associated to
+     * @param name      Name of device
      */
-    public void connectTo(String name)
+    public void requestPairedDevice(Player player, String name)
     {
         if (mEnable) {
-            // Just connect to first with this name. Maybe we should base decision on other factor?
-            for (BluetoothDevice d : mDevices) {
-                if(d.getName().equals(name)) {
-                    mBS.connect(d);
-                    break;
+            if(player != null) {
+                mCurrentPlayer = player;
+                for (BluetoothDevice d : mDevices) {
+                    if(d.getBondState() == BluetoothDevice.BOND_BONDED) {
+                        Log.d(LOGTAG, "Device already paired - add to player");
+
+                        // TODO:
+                        // Not that we do not open a connection to the other player...
+                        // Maybe we should to check if it works?
+                        mCurrentPlayer.setBDevice(d); // Device already paired
+                        break;
+                    }
+                    // Device not paired yet
+                    if(d.getName().equals(name)) {
+                        // This establishes a connection to the other device which involves pairing
+                        // The connection is left open afterwards
+                        mBS.connect(d);
+                        break;
+                    }
                 }
-            }
+            } else Log.d(LOGTAG,"Tried to get paired device for null-Player");
         }
     }
 
-    /**
-     * The client of this class is responsible to keep inform this class about which of the players
-     * is the current player. This applies for SetupActivity
-     * @param currentPlayer     Current player (selected button) 1 <= pl <= 3
-     */
-    public void setCurrentPlayer(int currentPlayer)
+
+    public void disconnect()
     {
-        if (currentPlayer < 4 && currentPlayer > 0) mCurrentPlayer = currentPlayer;
-        else Log.d(LOGTAG,"Invalid currentPlayer");
+        if(mEnable) mBS.disconnect();
     }
 
     /**
@@ -132,11 +141,23 @@ public class BluetoothComm implements BluetoothServicesListener {
     public void listen(Boolean enable)
     {
         if (mEnable) {
-            if (enable) {
-                makeDiscoverable();
-                mBS.listen();
-            } else {
-                // TODO: cancel listening and discoverability
+            Log.d(LOGTAG,"Enable listening: " + Boolean.toString(enable));
+            if (enable) mBS.listen();
+            else mBS.disconnect();
+        }
+    }
+
+    public void discoverable()
+    {
+        if(mEnable) {
+            Log.d(LOGTAG, "Make discoverable");
+            if(mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+                listen(false); // Stop listening if were listening
+                Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                i.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+                mContext.startActivity(i);
+                listen(true); // Start again
             }
         }
     }
@@ -146,17 +167,17 @@ public class BluetoothComm implements BluetoothServicesListener {
      * @param msg       msg to be sent
      * @param receiver  Player to receive it
      */
-    public void sendMessageToPlayer(JSONObject msg, int receiver)
+    public void sendMessageToPlayer(JSONObject msg, Player receiver)
     {
-        if (mEnable && receiver < 4 && receiver > 0) {
-            BluetoothDevice recDevice = mPlayerDevices[receiver-1];
-            byte[] bytes = MessageFactory.msgToBytes(msg);
+        if (mEnable && msg != null && receiver != null) {
+            Log.d(LOGTAG,"Sending message to receiver at pos " + receiver.getPosition());
 
-            // TODO: Make that can send to specified device not just the one that happens to be connected
-            mBS.send(bytes);
-        }
+            // TODO: Check if device ok?
+            BluetoothDevice recDevice = receiver.getBDevice();
+            mBS.send(recDevice, MessageFactory.msgToBytes(msg));
+
+        } else Log.d(LOGTAG,"There is a problem sending a message to a receiver");
     }
-
 
     // Listener to device scan
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -197,20 +218,6 @@ public class BluetoothComm implements BluetoothServicesListener {
         }
     }
 
-    // Ensure discoverability
-    private void makeDiscoverable()
-    {
-        if(mEnable) {
-            if(mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-                Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-                mContext.startActivity(i);
-            }
-        }
-    }
-
-
     /**
      *
      * BluetoothServices callbacks
@@ -221,13 +228,20 @@ public class BluetoothComm implements BluetoothServicesListener {
     {
         JSONObject msg = MessageFactory.bytesToMsg(bytes, noBytes);
         Log.d(LOGTAG,"Receiving message " + mMF.getType(msg));
+        mListener.onReceiveMessage(msg);
     }
 
     public void onConnected(BluetoothDevice device)
     {
         Log.d(LOGTAG, "Connected to " + device.getName());
-        if (mCurrentPlayer < 0) Log.d(LOGTAG,"mCurrentPlayer not set");
-        else mPlayerDevices[mCurrentPlayer - 1] = device; // Store device
+        /*if (mCurrentPlayer < 0) Log.d(LOGTAG,"mCurrentPlayer not set");
+        else mPlayerDevices[mCurrentPlayer - 1] = device; // Store device*/
+        if(mCurrentPlayer != null) {
+            if(device.getBondState() == BluetoothDevice.BOND_BONDED) {
+                mCurrentPlayer.setBDevice(device);
+                mCurrentPlayer = null;
+            } else Log.d(LOGTAG,"Cannot set Bluetooth device because it's not paired");
+        } else Log.d(LOGTAG,"Cannot set Bluetooth device because mCurrentPlayer is null");
     }
 
 }
