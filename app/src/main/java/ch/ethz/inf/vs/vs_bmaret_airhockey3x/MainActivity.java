@@ -53,7 +53,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         super.onResume();
 
-        // Make buttons appear next to each other when in landscape
+        // Make buttons appear next to each other when in landscape -> Important if we start off with
+        // Landscape
         LinearLayout linearLayout = (LinearLayout) findViewById(R.id.button_layout);
         // Checks the orientation of the screen
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -101,15 +102,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 startActivity(i1);
                 break;
             case R.id.join_check_box:
+                // We need to make ourselves discoverable if we are not paired yet
                 if (((CheckBox) b).isChecked()) {
                     mBC.discoverable();
+                } else {
+                    // TODO: Cancel discoverability
                 }
         }
     }
 
-    public void onDeviceFound(String name) {} // Callback dont needed
+    public void onDeviceFound(String name) {} // Callback not needed
     public void onReceiveMessage(JSONObject msg)
     {
+        // For DEBUG purposes just display an alert saying that we got a message
         final JSONObject finalMsg = msg;
         if (msg != null){
             runOnUiThread(new Runnable() {

@@ -58,12 +58,15 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         b = (Button) findViewById(R.id.test_msg_btn3);
         b.setOnClickListener(this);
 
+        // Ask user how many players
         showDialog();
 
         mDevicesListView = (ListView) findViewById(R.id.devices_list);
+        // Callback for clicking on ListView
         mDevicesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View arg1, int position, long arg3) {
                 String entry = (String) parent.getItemAtPosition(position);
+                // We want mBC to add the right (the one we clicked on) Bluetooth device to mCurrentPlayer
                 if (mCurrentPlayer != null) mBC.requestPairedDevice(mCurrentPlayer, entry);
                 else Log.d(LOGTAG, "mCurrentPlayer is null - cannot request paired device");
 
@@ -75,7 +78,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         mBC.scan();
 
         // Create Game
-        // TODO: Do actording to what the user wants
+        // TODO: Do actording to what the user wants 2,3,4 players -> Do in the end when everything works for 3
         initGame(3);
     }
 
@@ -91,6 +94,19 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
      * The idea is that the user clicks on one of the other players squares and that he can then
      * select one of the devices on the list. We need then to establish the connection the the other
      * etc..
+     *
+     * On click on button a new player is initialized and added to the game at the respective position.
+     * As long as the button stays selected the corresponding player is stored in mCurrentPlayer.
+     * If the user the selects a BluetoothDevice from the now enabled list; The right Bluetooth device
+     * will be added to the player.
+     *
+     * To send a test message:
+     * 1. click on player you want
+     * 2. click on device for the player
+     * 3. wait a bit
+     * 4. click again on player s.t. he gets unselected
+     * 5. press sent message button (If press before it crashes)
+     * -> sometimes it crashes for newly paired devices -> try again when already paired
      *
      * Players sit like this
      *    2
@@ -127,17 +143,17 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
 
             // DEBUG
             case R.id.test_msg_btn1:
-                // Send test message
+                // Send test message to player at position 1
                 JSONObject msg = (new MessageFactory()).createMessage(MessageFactory.MOCK_MESSAGE, 0, null);
                 mBC.sendMessageToPlayer(msg,mGame.getPlayer(1));
                 break;
             case R.id.test_msg_btn3:
-                // Send test message
+                // Send test message to player at position 3
                 JSONObject msg1 = (new MessageFactory()).createMessage(MessageFactory.MOCK_MESSAGE, 0, null);
                 mBC.sendMessageToPlayer(msg1, mGame.getPlayer(3));
                 break;
         }
-        // Check if no button is selected -> need to disable list
+        // Check if no button is selected -> need to disable list if none is and invalidate current player
         boolean sel = false;
         for (ImageButton ib : mImageButtons) {
             if(ib.isSelected()) sel = true;
@@ -148,15 +164,24 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         }
     }
 
+    /**
+     *
+     * BluetoothComm callbacks
+     *
+     */
+
+
     // Populate listview as soon as devices found or changed
     public void onDeviceFound(String name)
     {
         if (mAdapter == null) {
+            // First call -> initialize Listadapter
             List<String> names = new ArrayList<>();
             names.add(name);
             mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,names);
             mDevicesListView.setAdapter(mAdapter);
         } else {
+            // Use Listadapter which is already initialized
             mAdapter.add(name);
             mAdapter.notifyDataSetChanged();
         }
@@ -165,6 +190,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
 
     public void onReceiveMessage(JSONObject msg)
     {
+        // For DEBUG purposes just display an alert saying that we got a message
         final JSONObject finalMsg = msg;
         if (msg != null){
             runOnUiThread(new Runnable() {
@@ -216,7 +242,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
 
     /**
      * Sets current player. A player is considered 'current' iff the corresponding button is selected
-     * Disconnect device whe
+     * Disconnect devices of all when none is current.
      * @param p     Current player
      */
     private void setCurrentPlayer(Player p)

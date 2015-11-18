@@ -17,6 +17,23 @@ import java.util.UUID;
  * This class handles all the connections with Bluetooth devices. This includes
  * connecting to devices, listening for incoming connections and transmitting data.
  *
+ * TODO: Make it possible to connect to multiple devices because it is too slow to always
+ * establish a connection before sending a message. The BluetoothClientSocket in Listen thread
+ * can apparently .accept() multiple times. Check links and internet. This would however mean that
+ * the player which waits on MainActivity gets to be the server because he has the ServerSocket and
+ * not the player which is in the setup.
+ *
+ * -> What to do? After all players know each other -> setup phase is essentially done. We select one player
+ * to be the server and he then stays the server. The other players must probably then initiate the
+ * connection to this player and we must sometimes forward messages.
+ *
+ * Another idea would have been that the player which has the puck is the server and establishes all connections
+ * to the others and then just sends as soon he knows to whom (this goes then fast). However i think
+ * this is not possible because the other players must request the connection to the server player
+ * and not the server player his clients. And the other player have no way to know who is now the
+ * server player (has gotten the puck) out of the blue. Unless we just broadcast all messages, i.e.
+ * when player A plays puck to player B, A informs B and C about that so that A and C know that they
+ * now connect to B because he is the next server player.
  */
 public class BluetoothServices {
 
@@ -35,6 +52,7 @@ public class BluetoothServices {
     private int mState = STATE_NONE;
 
     // Current connection state
+    // TODO: This changes also when have multiple connections
     public static final int STATE_NONE = 0;
     public static final int STATE_LISTEN = 1;
     public static final int STATE_CONNECTING = 2;
@@ -47,7 +65,7 @@ public class BluetoothServices {
     }
 
     /**
-     * Cancel all threads
+     * Cancel all threads - Careful also the listening gets stopped
      */
     public void disconnect()
     {
@@ -80,7 +98,8 @@ public class BluetoothServices {
     }
 
     /**
-     * Listen for incoming connections
+     * Listen for incoming connections - This could be extended to listen for multiple connections
+     * -> Consult links & internet
      */
     public void listen()
     {
@@ -190,12 +209,13 @@ public class BluetoothServices {
             Log.d(LOGTAG, "Sending queued bytes");
             mTransmissionThread.send(mQueuedBytes);
             mQueuedBytes = null;
-            // TODO: Want to disconnect now
+            // TODO: Want to disconnect now up until now we just close the app and restart it
         }
 
-
-        mListener.onConnected(device); // Notify listener about connected device
+        // TODO: This should only be done while pairing
+        mListener.onConnected(device);
     }
+
 
     private void connectionFailed()
     {
@@ -212,6 +232,8 @@ public class BluetoothServices {
 
     /**
      * Thread that listens for incoming connections
+     *
+     * TODO: Let this thread listen for multiple connections or have multiple of this threads
      */
     private class ListenThread extends Thread {
 
@@ -315,8 +337,6 @@ public class BluetoothServices {
                 try {
                     mSocket.close();
                 } catch (IOException e2) {e.printStackTrace();}
-                // Start the service over to restart listening mode
-                //BluetoothServices.this.start();
 
 
                 return;
@@ -380,7 +400,7 @@ public class BluetoothServices {
                     mListener.onReceiveBytes(buf, n); // Tell listener about received bytes
                 }
             } catch (IOException e) {
-                Log.d(LOGTAG, "Connection lost - listen thread should be running");
+                Log.d(LOGTAG, "Connection lost - Start listening again for incoming connections");
                 mState = STATE_LISTEN;
                 listen();
                 e.printStackTrace();

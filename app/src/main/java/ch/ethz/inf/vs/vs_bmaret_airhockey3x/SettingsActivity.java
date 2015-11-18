@@ -5,6 +5,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+
+/**
+ * The most important reason for this Activity up until now is to store the players user name to
+ * SharedPreferences. Further settings?
+ *
+ * TODO: Everything
+ */
+
+
 public class SettingsActivity extends AppCompatActivity {
 
     final static String LOGTAG = "SettingsActivity";

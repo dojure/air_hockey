@@ -57,7 +57,9 @@ public class BluetoothComm implements BluetoothServicesListener {
         if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
             Log.d(LOGTAG,"Bluetooth not enabled");
 
-            // TODO: Show this in Activity somehow
+            /* TODO: Show this in Activity somehow up until now the classe simply does nothing when
+            * Bluetooth is not availabe; mEnable is false. */
+
             //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         } else {
@@ -98,7 +100,7 @@ public class BluetoothComm implements BluetoothServicesListener {
     }
 
     /**
-     * Requests paired device for given player
+     * Add the paired device with name 'name' to player
      * @param player    Player to whom the device should be associated to
      * @param name      Name of device
      */
@@ -112,7 +114,7 @@ public class BluetoothComm implements BluetoothServicesListener {
                         Log.d(LOGTAG, "Device already paired - add to player");
 
                         // TODO:
-                        // Not that we do not open a connection to the other player...
+                        // Note that we do not open a connection to the player...
                         // Maybe we should to check if it works?
                         mCurrentPlayer.setBDevice(d); // Device already paired
                         break;
@@ -120,8 +122,9 @@ public class BluetoothComm implements BluetoothServicesListener {
                     // Device not paired yet
                     if(d.getName().equals(name)) {
                         // This establishes a connection to the other device which involves pairing
-                        // The connection is left open afterwards
+                        // The connection is left open afterwards ?
                         mBS.connect(d);
+                        //mCurrentPlayer.setBDevice(d);
                         break;
                     }
                 }
@@ -129,14 +132,15 @@ public class BluetoothComm implements BluetoothServicesListener {
         }
     }
 
+    /**
+     * Stop BluetoothServices - Also stops listening
+     */
+    public void disconnect() {if(mEnable) mBS.disconnect();}
 
-    public void disconnect()
-    {
-        if(mEnable) mBS.disconnect();
-    }
 
     /**
      * Listen for incoming connections
+     * @param enable    Either listen or disconnect
      */
     public void listen(Boolean enable)
     {
@@ -147,6 +151,9 @@ public class BluetoothComm implements BluetoothServicesListener {
         }
     }
 
+    /**
+     * Make the device discoverable. This must be done if the two devices are not paired yet
+     */
     public void discoverable()
     {
         if(mEnable) {
@@ -163,7 +170,7 @@ public class BluetoothComm implements BluetoothServicesListener {
     }
 
     /**
-     *
+     * Sends a message to a specific player
      * @param msg       msg to be sent
      * @param receiver  Player to receive it
      */
@@ -237,10 +244,13 @@ public class BluetoothComm implements BluetoothServicesListener {
         /*if (mCurrentPlayer < 0) Log.d(LOGTAG,"mCurrentPlayer not set");
         else mPlayerDevices[mCurrentPlayer - 1] = device; // Store device*/
         if(mCurrentPlayer != null) {
-            if(device.getBondState() == BluetoothDevice.BOND_BONDED) {
+            // TODO: Fix this somehow.. I wanted only to add a device if it was paired.. but somehow
+            // This is too slow (?) And it still doesnt work sometimes with not paired devices
+
+            //if(device.getBondState() == BluetoothDevice.BOND_BONDED) {
                 mCurrentPlayer.setBDevice(device);
                 mCurrentPlayer = null;
-            } else Log.d(LOGTAG,"Cannot set Bluetooth device because it's not paired");
+            //} else Log.d(LOGTAG,"Cannot set Bluetooth device because it's not paired");
         } else Log.d(LOGTAG,"Cannot set Bluetooth device because mCurrentPlayer is null");
     }
 

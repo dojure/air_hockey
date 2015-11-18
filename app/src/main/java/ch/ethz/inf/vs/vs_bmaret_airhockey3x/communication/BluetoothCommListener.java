@@ -5,6 +5,8 @@ import org.json.JSONObject;
 /**
  * Created by Valentin on 14/11/15.
  *
+ * Define callbacks for BluetoothComm -> In our case the Activities
+ *
  */
 
 public interface BluetoothCommListener {

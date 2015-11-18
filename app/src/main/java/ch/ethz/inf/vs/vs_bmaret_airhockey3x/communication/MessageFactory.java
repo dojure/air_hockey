@@ -10,6 +10,8 @@ import java.io.UnsupportedEncodingException;
  *
  * Defines all messages that can be sent. Provides methods to get message.
  *
+ * TODO: It would probably be more ellegant to have a message class; s.t. the message is an object
+ * and the clients dont have to deal with JSON
  */
 public class MessageFactory {
 
@@ -80,9 +82,8 @@ public class MessageFactory {
 
 
     /**
-     *
-     * Create message. This must likely still be extended.
-     *
+     * Create message.
+     * TODO: This must likely still be extended. E.g. with receiver..
      * @param type      Type of message
      * @param playerId  Sender id
      * @param body      Body of message, use provided method for respective type to create body

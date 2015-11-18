@@ -1,8 +1,8 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x.game;
 
-import java.util.ArrayList;
+import android.util.Log;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,6 +15,9 @@ import java.util.Map;
  */
 
 public class Game {
+
+    private final String LOGTAG = "Game";
+
     private static Game ourInstance = new Game();
 
     public static Game getInstance() {
@@ -39,10 +42,16 @@ public class Game {
      */
     public void addPlayer(Player p)
     {
-        // TODO: Check if position is valid (consistent wuth mPlayerNr)
-        mPlayers.put(p.getPosition(),p);
+        if (p != null) mPlayers.put(p.getPosition(),p);
+        else Log.d(LOGTAG,"Attempted to add null player");
+
     }
 
+    /**
+     * Get player object for position
+     * @param position  Position of player on game
+     * @return          Player
+     */
     public Player getPlayer(int position)
     {
         // TODO: Check if position is valid (consistent wuth mPlayerNr)
