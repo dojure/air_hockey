@@ -44,7 +44,6 @@ public class Game {
     {
         if (p != null) mPlayers.put(p.getPosition(),p);
         else Log.d(LOGTAG,"Attempted to add null player");
-
     }
 
     /**
@@ -54,7 +53,7 @@ public class Game {
      */
     public Player getPlayer(int position)
     {
-        // TODO: Check if position is valid (consistent wuth mPlayerNr)
+        // TODO: Check if position is valid (consistent with mPlayerNr)
         if (position > 3 && position < 0) return null;
         return mPlayers.get(position);
     }

@@ -58,28 +58,37 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         b = (Button) findViewById(R.id.test_msg_btn3);
         b.setOnClickListener(this);
 
-        // Ask user how many players
-        showDialog();
-
-        mDevicesListView = (ListView) findViewById(R.id.devices_list);
-        // Callback for clicking on ListView
-        mDevicesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View arg1, int position, long arg3) {
-                String entry = (String) parent.getItemAtPosition(position);
-                // We want mBC to add the right (the one we clicked on) Bluetooth device to mCurrentPlayer
-                if (mCurrentPlayer != null) mBC.requestPairedDevice(mCurrentPlayer, entry);
-                else Log.d(LOGTAG, "mCurrentPlayer is null - cannot request paired device");
-
-            }
-        });
-        setEnableListView(false);
+        // TODO: Ask user how many players
+        //showDialog();
 
         mBC = new BluetoothComm(this, getApplicationContext());
         mBC.scan();
 
         // Create Game
-        // TODO: Do actording to what the user wants 2,3,4 players -> Do in the end when everything works for 3
+        // TODO: Do according to what the user wants 2,3,4 players -> Do in the end when everything works for 3
         initGame(3);
+
+        // Initialize the ListView
+        // Callback for clicking on ListView
+        // Set mCurrentPlayer to the right (the one we clicked on) Bluetooth device
+        mDevicesListView = (ListView) findViewById(R.id.devices_list);
+        mDevicesListView.setOnItemClickListener(
+                new AdapterView.OnItemClickListener() {
+                    public void onItemClick(AdapterView<?> parent, View arg1, int position, long arg3) {
+
+                        String entry = (String) parent.getItemAtPosition(position);
+                        if (mCurrentPlayer != null) {
+                            mBC.invite(mCurrentPlayer, entry);
+                        } else {
+                            Log.d(LOGTAG, "mCurrentPlayer is null - cannot request paired device");
+                        }
+
+                        // TODO: Somewhere in here it must be checked whether all seats have been filled.
+                        // TODO: If this is the case the rest of the connection must be set between non host players
+                    }
+                });
+
+        setEnableListView(false);
     }
 
 
@@ -92,12 +101,12 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
 
     /**
      * The idea is that the user clicks on one of the other players squares and that he can then
-     * select one of the devices on the list. We need then to establish the connection the the other
+     * select one of the devices on the list. We need then to establish the connection to the other
      * etc..
      *
      * On click on button a new player is initialized and added to the game at the respective position.
      * As long as the button stays selected the corresponding player is stored in mCurrentPlayer.
-     * If the user the selects a BluetoothDevice from the now enabled list; The right Bluetooth device
+     * If the user then selects a BluetoothDevice from the now enabled list; The Bluetooth device
      * will be added to the player.
      *
      * To send a test message:
@@ -124,8 +133,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
             case R.id.player1_btn:
                 if (!b.isSelected()) {
                     b.setSelected(true);
-                    Player tmp = mGame.getPlayer(1);
-                    setCurrentPlayer(tmp);
+                    setCurrentPlayer(mGame.getPlayer(1));
                 } else b.setSelected(false);
                 break;
             case R.id.player2_btn:
@@ -221,7 +229,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
      *
      */
 
-    // Shows dialog where user can decide how many players want to participate
+    // TODO: Shows dialog where user can decide how many players want to participate
     private void showDialog()
     {
         AlertDialog.Builder dialog  = new AlertDialog.Builder(this);
@@ -255,7 +263,7 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
 
     /**
      * Initializes game with given number of players
-     * @param nrPlayers Number of players that take part in gane
+     * @param nrPlayers Number of players that take part in game
      */
     private void initGame(int nrPlayers)
     {

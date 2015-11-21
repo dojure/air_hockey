@@ -112,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void onDeviceFound(String name) {} // Callback not needed
+
     public void onReceiveMessage(JSONObject msg)
     {
         // For DEBUG purposes just display an alert saying that we got a message
