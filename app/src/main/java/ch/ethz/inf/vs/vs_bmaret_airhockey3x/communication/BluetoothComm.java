@@ -108,19 +108,21 @@ public class BluetoothComm implements BluetoothServicesListener {
         if(player != null) {
             mCurrentPlayer = player;
 
+            // TODO: Check whether this player was already invited and has a seat in the game
+            // It should not be possible that a device occupies 2 seats in the game
+
             for (BluetoothDevice d : mDevices) {
                 if (d.getName().equals(name)) {
 
-                    // Open a connection to the device
-                    // TODO: Support multiple connections
-                    mBS.connect(d);
+                    // Open a connection to the device at the specific player
+                    mBS.connect(d, player);
 
                     // Send a message with an invitation for the game
                     // TODO: Send a invitation message
 
                     // If the player accepted set the device of the mCurrentPlayer to d
                     // TODO: Check whether the player accepted the invitation, otherwise prompt an error
-                    // TODO: If the player accepts the invitation he should get to the frozen set up screen
+                    // TODO: If the player accepts the invitation he should get to the "frozen" set up screen
                     mCurrentPlayer.setBDevice(d);
 
                     // There is no need to finish the loop
@@ -180,8 +182,8 @@ public class BluetoothComm implements BluetoothServicesListener {
             Log.d(LOGTAG,"Sending message to receiver at pos " + receiver.getPosition());
 
             // TODO: Check if device ok?
-            BluetoothDevice recDevice = receiver.getBDevice();
-            mBS.send(recDevice, MessageFactory.msgToBytes(msg));
+
+            mBS.send(receiver, MessageFactory.msgToBytes(msg));
 
         } else Log.d(LOGTAG,"There is a problem sending a message to a receiver");
     }
@@ -239,17 +241,6 @@ public class BluetoothComm implements BluetoothServicesListener {
     public void onConnected(BluetoothDevice device)
     {
         Log.d(LOGTAG, "Connected to " + device.getName());
-        /*if (mCurrentPlayer < 0) Log.d(LOGTAG,"mCurrentPlayer not set");
-        else mPlayerDevices[mCurrentPlayer - 1] = device; // Store device*/
-        if(mCurrentPlayer != null) {
-            // TODO: Fix this somehow.. I wanted only to add a device if it was paired.. but somehow
-            // This is too slow (?) And it still doesnt work sometimes with not paired devices
-
-            //if(device.getBondState() == BluetoothDevice.BOND_BONDED) {
-                mCurrentPlayer.setBDevice(device);
-                mCurrentPlayer = null;
-            //} else Log.d(LOGTAG,"Cannot set Bluetooth device because it's not paired");
-        } else Log.d(LOGTAG,"Cannot set Bluetooth device because mCurrentPlayer is null");
     }
 
 }

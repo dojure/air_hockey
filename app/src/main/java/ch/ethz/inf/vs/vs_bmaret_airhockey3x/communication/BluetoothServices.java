@@ -9,8 +9,9 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.UUID;
+
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
 /**
  * Created by Valentin on 15/11/15.
@@ -22,11 +23,8 @@ public class BluetoothServices {
 
     private final String LOGTAG = "BluetoothServices";
 
-    // Unique UUID for this application - ??
-    private static final UUID MUUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
     private static final String NAME = "AirHockey3X";
 
-    // Allow only one mListener
     private BluetoothServicesListener mListener;
     private final BluetoothAdapter mAdapter;
 
@@ -34,14 +32,31 @@ public class BluetoothServices {
     private TransmissionThread mTransmissionThread;
     private ListenThread mListenThread;
 
-    private ArrayList<TransmissionThread> mTransmissionThreads;
-    private ArrayList<BluetoothSocket> mSockets;
+    /**
+     * Array to store a different UUID for each connection
+     * TODO: Additional UUIDs needed?
+     * Order:
+     * From     To
+     * 0        1
+     * 0        2
+     * 0        3
+     * 1        2
+     * 1        3
+     * 2        3
+     */
+    private static UUID[] mUUIDs;
 
-    private byte[] mQueuedBytes = null;
+    private TransmissionThread[] mTransmissionThreads;
+    private BluetoothSocket[] mSockets;
+    private BluetoothDevice[] mDevices;
+
+    // TODO: The state is not locked properly
+    // TODO: Is it necessary?
+    // TODO: Not properly updated
     private int mState = STATE_NONE;
 
     // Current connection state
-    // TODO: This changes also when have multiple connections
+    // TODO: This changes also when have multiple connections?
     public static final int STATE_NONE = 0;
     public static final int STATE_LISTEN = 1;
     public static final int STATE_CONNECTING = 2;
@@ -51,9 +66,19 @@ public class BluetoothServices {
     {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mListener = listener;
-        mTransmissionThreads = new ArrayList<TransmissionThread>();
-        mSockets = new ArrayList<BluetoothSocket>();
-    }
+
+        mTransmissionThreads = new TransmissionThread[4];
+        mSockets = new BluetoothSocket[4];
+        mDevices = new BluetoothDevice[4];
+
+        mUUIDs = new UUID[6];
+        mUUIDs[0] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a60");
+        mUUIDs[1] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a61");
+        mUUIDs[2] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a62");
+        mUUIDs[3] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a63");
+        mUUIDs[4] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a64");
+        mUUIDs[5] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a65");
+        }
 
     /**
      * Listen for incoming connections
@@ -61,7 +86,7 @@ public class BluetoothServices {
     public synchronized void listen()
     {
         Log.d(LOGTAG,"Start listening for connections");
-
+/*
         // Cancel any threads currently trying to establish a connection
         if (mConnectThread != null) {
             mConnectThread.cancel();
@@ -73,7 +98,7 @@ public class BluetoothServices {
             mTransmissionThread.cancel();
             mTransmissionThread = null;
         }
-
+*/
         if (mListenThread == null) {
             mListenThread = new ListenThread();
             mListenThread.start();
@@ -86,10 +111,10 @@ public class BluetoothServices {
      * Initiate new connection to remote device.
      * @param device    Device to connect to
      */
-    public synchronized void connect(BluetoothDevice device)
+    public synchronized void connect(BluetoothDevice device, Player player)
     {
         Log.d(LOGTAG,"Attempting to connect to " + device.getName());
-
+/*
         // Cancel any threads currently trying to establish connection to other
         if (mState == STATE_CONNECTING && mConnectThread != null) {
             mConnectThread.cancel();
@@ -101,62 +126,34 @@ public class BluetoothServices {
             mTransmissionThread.cancel();
             mTransmissionThread = null;
         }
-
-        mConnectThread = new ConnectThread(device);
-        mConnectThread.start();
-
-        mState = STATE_CONNECTING;
+*/
+        // TODO: This does only work for player 1 and I do not really know why.
+        // TODO: This is the most important part at the moment.
+        // Start three threads trying to connect with player.
+        // Three times is necessary to let the server try the different UUIDs
+        for (int i = 0; i < 3; i++) {
+            mConnectThread = new ConnectThread(device, player);
+            mConnectThread.start();
+            mState = STATE_CONNECTING;
+        }
     }
 
     /**
      * Start handling connection
-     * @param socket    Socket on which the connection was made
-     * @param device    Device to which is transmitted
+     * @param playerPosition Player position at which the connection was made
      */
-    public synchronized void transmit(BluetoothSocket socket, BluetoothDevice device)
+    public synchronized void transmit(int playerPosition)
     {
         Log.d(LOGTAG,"Connected");
 
-        // TODO: Delete
-        /* All cancellations are commented out, since we want multiple connections
-        // Cancel any threads currently trying to establish connection to other
-        if (mConnectThread != null) {
-            mConnectThread.cancel();
-            mConnectThread = null;
-        }
-
-        // Cancel all listen threads
-        if (mListenThread != null) {
-            mListenThread.cancel();
-            mListenThread = null;
-        }
-
-        // Cancel all threads doing transmissions
-        if (mTransmissionThread != null) {
-            mTransmissionThread.cancel();
-            mTransmissionThread = null;
-        }*/
-
-        mTransmissionThread = new TransmissionThread(socket);
+        mTransmissionThread = new TransmissionThread(mSockets[playerPosition]);
         mTransmissionThread.start();
 
-        // TODO: This should be done for the right position for each player
-        mTransmissionThreads.add(mTransmissionThread);
+        mTransmissionThreads[playerPosition] = mTransmissionThread;
+        mTransmissionThread = null;
 
+        mListener.onConnected(mSockets[playerPosition].getRemoteDevice());
         mState = STATE_CONNECTED;
-
-
-
-        // Send queued message if any
-        if (mQueuedBytes != null) {
-            Log.d(LOGTAG, "Sending queued bytes");
-            mTransmissionThread.send(mQueuedBytes);
-            mQueuedBytes = null;
-            // TODO: Want to disconnect now up until now we just close the app and restart it
-        }
-
-        // TODO: This should only be done while pairing
-        mListener.onConnected(device);
     }
 
     /**
@@ -188,23 +185,13 @@ public class BluetoothServices {
      * Send bytes to remote device
      * If receiver is null, send to connected device if any, if receiver is not null,
      * establish connection then send.
-     * @param receiver  receiver of message
+     * @param player  receiver of message
      * @param bytes       Bytes to send
      */
-    public void send(BluetoothDevice receiver, byte[] bytes)
+    public void send(Player player, byte[] bytes)
     {
-        TransmissionThread r;
-        synchronized (this) {
-            if(mState != STATE_CONNECTED) {
-                Log.d(LOGTAG,"Cant send bytes because not connected yet -> connect first");
-                connect(receiver);
-                mQueuedBytes = bytes;
-                return;
-            }
-            r = mTransmissionThread;
-        }
         Log.d(LOGTAG, "Sending bytes");
-        r.send(bytes); // Send unsynchronized
+        mTransmissionThreads[player.getPosition()].send(bytes);
     }
 
     // Let client unregister
@@ -235,17 +222,9 @@ public class BluetoothServices {
      */
     private class ListenThread extends Thread {
 
-        private final BluetoothServerSocket mServerSocket;
+        private BluetoothServerSocket mServerSocket;
 
-        public ListenThread()
-        {
-            BluetoothServerSocket tmp = null;
-            try {
-                // TODO: Take the correct UUID, somehow include the currentPlayer and the host
-                tmp = mAdapter.listenUsingRfcommWithServiceRecord(NAME, MUUID);
-            } catch (IOException e) {e.printStackTrace();}
-            mServerSocket = tmp;
-        }
+        public ListenThread() {}
 
         public void run()
         {
@@ -253,36 +232,23 @@ public class BluetoothServices {
 
             BluetoothSocket socket = null;
 
-            while (mState != STATE_CONNECTED) {
+            // TODO: This does only work for the connections to the host player 0
                 try {
-                    socket = mServerSocket.accept();
+                    synchronized (mSockets) {
+                        int i = 0;
+                        mServerSocket = mAdapter.listenUsingRfcommWithServiceRecord(NAME, mUUIDs[i]);
+                        socket = mServerSocket.accept();
+                        if (socket != null) {
+                            BluetoothDevice d = socket.getRemoteDevice();
+                            mDevices[i] = d;
+                            mSockets[i] = socket;
+                            transmit(i);
+                        }
+                        i++;
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
-                    break;
                 }
-
-
-                if(socket != null) {
-                    Log.d(LOGTAG, "Successfully connected to " + socket.getRemoteDevice().getName());
-
-                    synchronized (BluetoothServices.this) {
-                        switch (mState) {
-                            case STATE_LISTEN:
-                            case STATE_CONNECTING:
-                                // All ok
-                                transmit(socket,socket.getRemoteDevice());
-                                break;
-                            case STATE_NONE:
-                            case STATE_CONNECTED:
-                                // Not ready or already connected
-                                try {
-                                    socket.close();
-                                } catch (IOException e) {e.printStackTrace();}
-                        }
-                    }
-                }
-
-            }
             Log.d(LOGTAG,"End ListenThread");
         }
 
@@ -301,24 +267,26 @@ public class BluetoothServices {
      */
     private class ConnectThread extends Thread {
 
-        private final BluetoothSocket mSocket;
-        private final BluetoothDevice mDevice;
+        private int playerPosition;
 
-        public ConnectThread(BluetoothDevice device)
+        public ConnectThread(BluetoothDevice device, Player player)
         {
-            mDevice = device;
+            playerPosition = player.getPosition();
+            mDevices[playerPosition] = device;
             BluetoothSocket tmp = null;
 
             // Get a BluetoothSocket for a connection with device
             try {
-                tmp = device.createRfcommSocketToServiceRecord(MUUID);
-            } catch (IOException e) {e.printStackTrace();}
-            mSocket = tmp;
+                tmp = device.createRfcommSocketToServiceRecord(mUUIDs[playerPosition - 1]);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mSockets[playerPosition] = tmp;
         }
 
         public void run()
         {
-            Log.d(LOGTAG,"Begin ConnectThread");
+            Log.d(LOGTAG, "Begin ConnectThread");
 
             // Cancel discovery if still going on
             mAdapter.cancelDiscovery();
@@ -327,32 +295,40 @@ public class BluetoothServices {
             try {
                 // This is a blocking call and will only return on a
                 // successful connection or an exception
-                mSocket.connect();
+                synchronized (mSockets) {
+                    if (!mSockets[playerPosition].isConnected())
+                        mSockets[playerPosition].connect();
+                }
             } catch (IOException e) {
+                //TODO
                 e.printStackTrace();
                 connectionFailed();
                 // Close the socket
                 try {
-                    mSocket.close();
-                } catch (IOException e2) {e.printStackTrace();}
-
-
-                return;
-            }
+                    //mSockets[playerPosition].close();
+                } catch (Exception e2) {e.printStackTrace();}
+                    // TODO: Do we need to restart listening?
+                    //return;
+                }
+           // }
 
             // Reset the ConnectThread because we're done
             synchronized (BluetoothServices.this) {
                 mConnectThread = null;
             }
-            // Start the connected thread
-            transmit(mSocket, mDevice);
+
+            if (mSockets[playerPosition].isConnected()) {
+                // Start the connected thread
+                transmit(playerPosition);
+            }
+
         }
 
         public void cancel()
         {
             Log.d(LOGTAG,"Cancel ConnectThread - closing socket");
             try {
-                mSocket.close();
+                mSockets[playerPosition].close();
             } catch (IOException e) {e.printStackTrace();}
         }
 

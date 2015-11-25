@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     mBC.discoverable();
                 } else {
                     // TODO: Cancel discoverability
+                    // TODO: THis might be impossible
                 }
         }
     }

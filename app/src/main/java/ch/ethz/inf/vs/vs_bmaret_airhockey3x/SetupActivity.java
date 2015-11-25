@@ -23,7 +23,8 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.MessageFactory;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Game;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
-public class SetupActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommListener {
+public class SetupActivity extends AppCompatActivity
+        implements View.OnClickListener, BluetoothCommListener {
 
     final static String LOGTAG = "SetupActivity";
 
@@ -61,13 +62,6 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
         // TODO: Ask user how many players
         //showDialog();
 
-        mBC = new BluetoothComm(this, getApplicationContext());
-        mBC.scan();
-
-        // Create Game
-        // TODO: Do according to what the user wants 2,3,4 players -> Do in the end when everything works for 3
-        initGame(3);
-
         // Initialize the ListView
         // Callback for clicking on ListView
         // Set mCurrentPlayer to the right (the one we clicked on) Bluetooth device
@@ -80,13 +74,24 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
                         if (mCurrentPlayer != null) {
                             mBC.invite(mCurrentPlayer, entry);
                         } else {
-                            Log.d(LOGTAG, "mCurrentPlayer is null - cannot request paired device");
+                            Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
                         }
 
                         // TODO: Somewhere in here it must be checked whether all seats have been filled.
-                        // TODO: If this is the case the rest of the connection must be set between non host players
+                        // TODO: If this is the case the rest of the connection must be set between
+                        // TODO: non host players
                     }
                 });
+
+
+        mBC = new BluetoothComm(this, getApplicationContext());
+        mBC.scan();
+
+        // Create Game
+        // TODO: Do according to what the user wants 2,3,4 players
+        // TODO: -> Do in the end when everything works for 3
+        initGame(3);
+
 
         setEnableListView(false);
     }
@@ -255,9 +260,13 @@ public class SetupActivity extends AppCompatActivity implements View.OnClickList
      */
     private void setCurrentPlayer(Player p)
     {
-        if (p != null) Log.d(LOGTAG,"Setting current player: " + Integer.toString(p.getPosition()));
-        else Log.d(LOGTAG, "Set current player to null");
-        if (mCurrentPlayer != null && !mCurrentPlayer.equals(p)) mBC.disconnect();
+        if (p != null)
+            Log.d(LOGTAG,"Setting current player: " + Integer.toString(p.getPosition()));
+        else
+            Log.d(LOGTAG, "Set current player to null");
+        if (mCurrentPlayer != null && !mCurrentPlayer.equals(p))
+            // TODO: Ok for multiple connections?
+            mBC.disconnect();
         mCurrentPlayer = p; // Even if null
     }
 
