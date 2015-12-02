@@ -40,10 +40,14 @@ public class BluetoothComm implements BluetoothServicesListener {
     /** Player that is currently selected*/
     private Player mCurrentPlayer = null;
 
-    public BluetoothComm(BluetoothCommListener listener, Context appContext)
+
+    private static BluetoothComm ourInstance = new BluetoothComm();
+    public static BluetoothComm getInstance() {return ourInstance;}
+
+    public void init(BluetoothCommListener listener, Context appContext)
     {
-        mListener = listener;
         mContext = appContext;
+        mListener = listener;
 
         mMF = new MessageFactory();
         mBS = new BluetoothServices(this);
@@ -66,6 +70,36 @@ public class BluetoothComm implements BluetoothServicesListener {
             // TODO: If the mEnable is still false, exit gracefully
         }
 
+
+        // The pairing stuff used to be here before it was a singleton
+
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        mContext.registerReceiver(receiver, filter);
+    }
+
+    public void registerListener(BluetoothCommListener listener)
+    {
+        if(listener != null) mListener = listener;
+        else Log.d(LOGTAG,"Tried to register null-listener");
+    }
+
+    // Let client unregister - 'this' is not needed anymore -> do cleanup
+    public void unregisterListener(BluetoothCommListener listener)
+    {
+        //mBS.unregisterListener(this); // Not needed anymore because singleton??
+        if (mListener == listener) { // Must be same mListener of course
+            mListener = null;
+
+            // TODO: Not working? get all devices found twice in LOG?
+            mContext.unregisterReceiver(receiver);
+        }
+    }
+
+    public List<String> getPairedDeviceNamesAdresses()
+    {
+        List<String> result = new ArrayList<>();
         // Add already paired mDevice
         // TODO: maybe do more intelligently
         for (BluetoothDevice d : mBluetoothAdapter.getBondedDevices()) {
@@ -76,26 +110,10 @@ public class BluetoothComm implements BluetoothServicesListener {
                 mDevices.add(d);
                 String name = d.getName();
                 String address = d.getAddress();
-                mListener.onDeviceFound(name, address);
+                result.add(name + " " + address);
             }
         }
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        mContext.registerReceiver(receiver, filter);
-    }
-
-
-    // Let client unregister - 'this' is not needed anymore -> do cleanup
-    public void unregisterListener(BluetoothCommListener listener)
-    {
-        mBS.unregisterListener(this);
-        if (mListener == listener) { // Must be same mListener of course
-            mListener = null;
-
-            // TODO: Not working? get all devices found twice in LOG?
-            mContext.unregisterReceiver(receiver);
-        }
+        return result;
     }
 
     /**
@@ -103,7 +121,7 @@ public class BluetoothComm implements BluetoothServicesListener {
      * Set the device of mCurrentPlayer to the invited device
      *
      * @param player    Player to whom the device should be associated to
-     * @param name      Name of device
+     * @param entry      Name of device
      */
     public void invite(Player player, String entry)
     {
@@ -118,7 +136,7 @@ public class BluetoothComm implements BluetoothServicesListener {
                 if (compare.equals(entry)) {
 
                     // Open a connection to the device at the specific player
-                    mBS.connect(d, player);
+                    mBS.connect(d.getAddress(), player.getPosition());
 
                     // Send a message with an invitation for the game
                     // TODO: Send a invitation message
@@ -126,7 +144,8 @@ public class BluetoothComm implements BluetoothServicesListener {
                     // If the player accepted set the device of the mCurrentPlayer to d
                     // TODO: Check whether the player accepted the invitation, otherwise prompt an error
                     // TODO: If the player accepts the invitation he should get to the "frozen" set up screen
-                    mCurrentPlayer.setBDevice(d);
+
+                    //mCurrentPlayer.setBDevice(d);
 
                     // There is no need to finish the loop
                     break;
@@ -136,6 +155,15 @@ public class BluetoothComm implements BluetoothServicesListener {
         } else {
             Log.d(LOGTAG,"Tried to get paired device for null-Player");
         }
+    }
+
+    public void remoteInvite(Player p1, Player p2)
+    {
+        // Tell p1 to connect to p2
+        String addressP2 = p2.getBDevice();
+        JSONObject msg = mMF.createMessage(MessageFactory.INVITE_REMOTE_MSG,
+                0, mMF.remoteInviteMessageBody(p2.getPosition(),addressP2));
+        mBS.send(p1.getPosition(),MessageFactory.msgToBytes(msg));
     }
 
     /**
@@ -186,7 +214,7 @@ public class BluetoothComm implements BluetoothServicesListener {
 
             // TODO: Check if device ok?
 
-            mBS.send(receiver, MessageFactory.msgToBytes(msg));
+            mBS.send(receiver.getPosition(), MessageFactory.msgToBytes(msg));
 
         } else Log.d(LOGTAG,"There is a problem sending a message to a receiver");
     }
@@ -241,11 +269,65 @@ public class BluetoothComm implements BluetoothServicesListener {
         JSONObject msg = MessageFactory.bytesToMsg(bytes, noBytes);
         Log.d(LOGTAG,"Receiving message " + mMF.getType(msg));
         mListener.onReceiveMessage(msg);
+
+        String msgType = mMF.getType(msg);
+        switch (msgType) {
+            case MessageFactory.INVITE_MSG:
+                /**
+                 * S: 2      I: 1    S: 2      I: 3
+                 * 1   3 --> 0   2,  1   3 --> 2   0
+                 *   0         3       0         1
+                 * E.g. if assigned pos =1 then the initiator is at pos 3 (first example)
+                 */
+                int assignedPos = mMF.getAssignedPosition(msg);
+                int senderPos = mMF.getSenderPos(msg);
+                int relPos = 4-assignedPos;
+                mBS.setPosForLastConnectedDevice(relPos);
+                mListener.onPlayerConnected(relPos);
+                break;
+            case MessageFactory.INVITE_REMOTE_MSG:
+                int absPos = mMF.getRemoteInviteAbsPos(msg);
+                String deviceAddress = mMF.getRemoteInviteAddress(msg);
+                Log.d(LOGTAG, "Got remote invite messgae with abspos " + Integer.toString(absPos) +
+                        " and address " + deviceAddress);
+                // TODO: General case this works only for 3
+                relPos = 4-absPos;
+                mBS.setPosForAddress(relPos,deviceAddress);
+                mBS.connect(deviceAddress, relPos);
+                mListener.onPlayerConnected(relPos);
+                break;
+        }
     }
 
-    public void onConnected(BluetoothDevice device)
+    public void onConnected(String deviceAddr)
     {
-        Log.d(LOGTAG, "Connected to " + device.getName());
+        Log.d(LOGTAG, "Connected to " + deviceAddr);
+        if (mCurrentPlayer != null) {
+            mCurrentPlayer.setBDevice(deviceAddr);
+            mListener.onPlayerConnected(mCurrentPlayer.getPosition());
+        } else Log.d(LOGTAG,"mCurrenPlayer was null!");
+
     }
 
+    /*
+    /**
+     * Get relative position of 'other'
+     * @param own       Relative position with respect to 'other' of us
+     * @param otherAbs  Absolute position of 'other'
+     * @return          Relative position of 'other' with respect to us
+     */
+    /*
+    private int gerRelativePosition(int own, int otherAbs, int numberOfPlayers)
+    {
+        int res = -1;
+        switch (numberOfPlayers) {
+            case 3:
+                res = 4-own;
+            default:
+                Log.d(LOGTAG,"gerRelativePosition not implemented for " + Integer.toString(numberOfPlayers) + " players");
+
+        }
+        return res;
+    }
+    */
 }

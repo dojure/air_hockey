@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.os.RemoteException;
 import android.util.Log;
 
 import java.io.IOException;
@@ -57,6 +56,7 @@ public class BluetoothServices {
     private List<String> mDeviceAddresses;
     private HashMap<String,BluetoothSocket> mSocketsMap;
     private HashMap<String,TransmissionThread> mTransmissionThreadMap;
+    private HashMap<Integer,String> mPositionToAddressMap;
 
 
     // TODO: The state is not locked properly
@@ -85,6 +85,7 @@ public class BluetoothServices {
         mSocketsMap = new HashMap<>();
         mDeviceAddresses = new ArrayList<>();
         mTransmissionThreadMap = new HashMap<>();
+        mPositionToAddressMap = new HashMap<>();
 
         mUUIDs = new UUID[6];
         mUUIDs[0] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a60");
@@ -122,13 +123,33 @@ public class BluetoothServices {
         //mState = STATE_LISTEN;
     }
 
+    // Hacky.. do smarter
+    public synchronized void setPosForLastConnectedDevice(int pos)
+    {
+        // Assuming only the last is not matched
+        boolean found = false;
+        for (String addr : mDeviceAddresses) {
+            if(!mPositionToAddressMap.containsValue(addr)) {
+                mPositionToAddressMap.put(new Integer(pos),addr);
+                found = true;
+            }
+        }
+        if (!found) Log.d(LOGTAG,"Didnt find new address, which had to be associated with its position");
+    }
+
+    public synchronized void setPosForAddress(int pos, String deviceAddress)
+    {
+        Log.d(LOGTAG,"Set address " + deviceAddress + " for device at position " + Integer.toString(pos));
+        mPositionToAddressMap.put(new Integer(pos), deviceAddress);
+    }
+
     /**
      * Initiate new connection to remote device.
-     * @param device    Device to connect to
+     * @param deviceAddress    Device to connect to
      */
-    public synchronized void connect(BluetoothDevice device, Player player)
+    public synchronized void connect(String deviceAddress, int playerPos)
     {
-        Log.d(LOGTAG,"Attempting to connect to " + device.getName());
+        Log.d(LOGTAG,"Attempting to connect to " + deviceAddress);
 /*
         // Cancel any threads currently trying to establish connection to other
         if (mState == STATE_CONNECTING && mConnectThread != null) {
@@ -142,9 +163,9 @@ public class BluetoothServices {
             mTransmissionThread = null;
         }
 */
-
-
-        mConnectThread = new ConnectThread(device,player);
+        String deviceAdress = deviceAddress;
+        mPositionToAddressMap.put(playerPos, deviceAdress);
+        mConnectThread = new ConnectThread(deviceAdress);
         mConnectThread.start();
     }
 
@@ -165,6 +186,8 @@ public class BluetoothServices {
 
         mListener.onConnected(mSockets[playerPosition].getRemoteDevice());
         //mState = STATE_CONNECTED;*/
+
+        mListener.onConnected(deviceAddr);
 
         mTransmissionThread = new TransmissionThread(mSocketsMap.get(deviceAddr));
         mTransmissionThread.start();
@@ -200,15 +223,16 @@ public class BluetoothServices {
      * Send bytes to remote device
      * If receiver is null, send to connected device if any, if receiver is not null,
      * establish connection then send.
-     * @param player  receiver of message
+     * @param pos         receiver position
      * @param bytes       Bytes to send
      */
-    public void send(Player player, byte[] bytes)
+    public void send(int pos, byte[] bytes)
     {
         Log.d(LOGTAG, "Sending bytes");
         //mTransmissionThreads[player.getPosition()].send(bytes);
-        String remoteDeviceAddr = player.getBDevice().getAddress();
-        TransmissionThread transmissionThread = mTransmissionThreadMap.get(remoteDeviceAddr);
+        String deviceAddress = mPositionToAddressMap.get(new Integer(pos));
+        if (deviceAddress == null) Log.d(LOGTAG,"Didnt find receiver address");
+        TransmissionThread transmissionThread = mTransmissionThreadMap.get(deviceAddress);
         transmissionThread.send(bytes);
     }
 
@@ -248,7 +272,12 @@ public class BluetoothServices {
         {
             try {
                 for (UUID uuid : mUUIDs) {
+                    if (uuid == null) {
+                        Log.d(LOGTAG,"Somehow, uuid was null, skip");
+                        continue;
+                    }
                     BluetoothServerSocket serverSocket = mAdapter.listenUsingInsecureRfcommWithServiceRecord(NAME,uuid);
+                    if (serverSocket == null) continue;
                     BluetoothSocket socket = serverSocket.accept();
                     serverSocket.close(); // Close now that connection has been made
                     // Connection has been made
@@ -273,36 +302,40 @@ public class BluetoothServices {
 
 
 
+    private BluetoothSocket getConnectedSocket(BluetoothDevice myBtServer, UUID uuidToTry) {
+        BluetoothSocket myBSock;
+        try {
+            myBSock = myBtServer.createRfcommSocketToServiceRecord(uuidToTry);
+            myBSock.connect();
+            return myBSock;
+        } catch (IOException e) {
+            Log.d(LOGTAG, "IOException in getConnectedSocket", e);
+        }
+        return null;
+    }
 
     /**
      * Thread to make connection with remote device.
      */
     private class ConnectThread extends Thread {
 
-            private int playerPosition;
-            private String deviceAddress;
+        private int playerPosition;
+        private String addr;
 
-            public ConnectThread(BluetoothDevice device, Player player)
+            public ConnectThread(String deviceAddress)
             {
-                playerPosition = player.getPosition();
-                deviceAddress = device.getAddress();
-
+                addr = deviceAddress;
             }
 
             public void run()
             {
-                BluetoothDevice server = mAdapter.getRemoteDevice(deviceAddress);
+                BluetoothDevice server = mAdapter.getRemoteDevice(addr);
                 BluetoothSocket socket = null;
 
                 for (int i=0; i < mUUIDs.length && socket == null; i++){
                     UUID uuid = mUUIDs[i];
                     for (int j= 0 ; j < 3 && socket == null; j++) {
-                        try {
-                            socket = server.createInsecureRfcommSocketToServiceRecord(uuid);
-                            socket.connect();
-                        }catch (IOException e) {
-                            Log.d(LOGTAG,"Could not connect with this UUID");
-                        }
+                        socket = getConnectedSocket(server,uuid);
                         if (socket == null) {
                             try {
                                 Thread.sleep(200);
@@ -313,11 +346,8 @@ public class BluetoothServices {
 
                 if (socket == null) Log.d(LOGTAG,"Tried all UUIDs but couldnt make connection");
                 //mSockets[playerPosition] = socket;
-                mSocketsMap.put(deviceAddress, socket);
-                mDeviceAddresses.add(deviceAddress);
-                TransmissionThread transmissionThread = new TransmissionThread(socket);
-                transmissionThread.start();
-                mTransmissionThreadMap.put(deviceAddress,transmissionThread);
+                mSocketsMap.put(addr, socket);
+                transmit(addr);
             }
 
 

@@ -13,16 +13,23 @@ import android.bluetooth.BluetoothDevice;
 public class Player {
 
     private final int mPosition;
-    private BluetoothDevice mBDevice;
+    private String mBDeviceAddress = null;
+    private int mRandId;
+    private boolean mReady = false;
 
     public Player(int pos)
     {
         mPosition = pos;
+        mRandId = (int) Math.random()*2048;
     }
 
     // Getter and setter for BluetoothDevice
-    public void setBDevice(BluetoothDevice device) {mBDevice = device;}
-    public BluetoothDevice getBDevice() {return mBDevice;}
+    public void setBDevice(String deviceAddress) {mBDeviceAddress = deviceAddress;}
+    public String getBDevice() {return mBDeviceAddress;}
+    public int getRandId() {return mRandId;}
 
     public int getPosition() {return mPosition;}
+    public void setReady(boolean ready) {mReady = ready;}
+    public boolean isReady() {return mReady;}
+    public boolean isConnected() {return mBDeviceAddress != null;}
 }

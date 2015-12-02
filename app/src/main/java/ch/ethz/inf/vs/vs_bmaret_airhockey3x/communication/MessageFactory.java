@@ -1,5 +1,7 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication;
 
+import android.webkit.JsPromptResult;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -10,19 +12,26 @@ import java.io.UnsupportedEncodingException;
  *
  * Defines all messages that can be sent. Provides methods to get message.
  *
- * TODO: It would probably be more ellegant to have a message class; s.t. the message is an object
+ * TODO: It would probably be more elegant to have a message class; s.t. the message is an object
  * and the clients dont have to deal with JSON
  */
 public class MessageFactory {
 
     // Define types
-    public final static String MOCK_MESSAGE = "mock";
+    public final static String MOCK_MSG = "mock";
+    public final static String INVITE_MSG = "invite";
+    public final static String INVITE_REMOTE_MSG = "invite_remote";
 
     // Keys occuring in msg
     private final static String HEADER_KEY = "header";
     private final static String BODY_KEY = "body";
     private final static String PLAYER_KEY = "player";
     private final static String TYPE_KEY = "type";
+    private final static String ASSIGNED_POS_KEY = "assigned_pos";
+    private final static String SENDER_POS_KEY = "sender_pos";
+    private final static String ABS_POS_KEY = "abs_pos";
+    private final static String ADDRESS_KEY = "address";
+
 
     public MessageFactory() {}
 
@@ -85,23 +94,92 @@ public class MessageFactory {
      * Create message.
      * TODO: This must likely still be extended. E.g. with receiver..
      * @param type      Type of message
-     * @param playerId  Sender id
-     * @param body      Body of message, use provided method for respective type to create body
+     * @param senderId  Sender id
      * @return          byte array ready to send - may change to JSONObj and then seperately conv to bytes
      */
-    public JSONObject createMessage(String type, int playerId, JSONObject body)
+    public JSONObject createMessage(String type, int senderId, JSONObject body)
     {
         JSONObject msg = new JSONObject();
         JSONObject header = new JSONObject();
-
         try {
-            header.put(PLAYER_KEY,playerId);
+            header.put(PLAYER_KEY,senderId);
             header.put(TYPE_KEY,type);
             msg.put(HEADER_KEY,header);
             msg.put(BODY_KEY,body);
         } catch (JSONException e) {e.printStackTrace();}
 
         return msg;
+    }
+
+
+    /**
+     * Invite message
+     */
+
+    public JSONObject inviteMessageBody(int assignedPos, int senderPos)
+    {
+        JSONObject body = null;
+        try {
+            body = new JSONObject();
+            body.put(ASSIGNED_POS_KEY,assignedPos);
+            body.put(SENDER_POS_KEY,senderPos);
+        }catch (JSONException e) {e.printStackTrace();}
+        return body;
+    }
+
+    public int getAssignedPosition(JSONObject msg)
+    {
+        int pos = -1;
+        try {
+            JSONObject body = msg.getJSONObject(BODY_KEY);
+            pos = body.getInt(ASSIGNED_POS_KEY);
+        } catch (JSONException e) {e.printStackTrace();}
+        return pos;
+    }
+    public int getSenderPos(JSONObject msg)
+    {
+        int pos = -1;
+        try {
+            JSONObject body = msg.getJSONObject(BODY_KEY);
+            pos = body.getInt(SENDER_POS_KEY);
+        } catch (JSONException e) {e.printStackTrace();}
+        return pos;
+    }
+
+    /**
+     * Remote invite
+     */
+
+    public JSONObject remoteInviteMessageBody(int absPos, String address)
+    {
+        JSONObject body = null;
+        try {
+            body = new JSONObject();
+            body.put(ABS_POS_KEY,absPos);
+            body.put(ADDRESS_KEY,address);
+        }catch (JSONException e) {e.printStackTrace();}
+        return body;
+    }
+
+
+    public String getRemoteInviteAddress(JSONObject msg)
+    {
+        String address = "";
+        try {
+            JSONObject body = msg.getJSONObject(BODY_KEY);
+            address = body.getString(ADDRESS_KEY);
+        } catch (JSONException e) {e.printStackTrace();}
+        return address;
+    }
+
+    public int getRemoteInviteAbsPos(JSONObject msg)
+    {
+        int absPos = -1;
+        try {
+            JSONObject body = msg.getJSONObject(BODY_KEY);
+            absPos = body.getInt(ABS_POS_KEY);
+        } catch (JSONException e) {e.printStackTrace();}
+        return absPos;
     }
 
 }

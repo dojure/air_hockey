@@ -21,6 +21,7 @@ import java.util.List;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.MessageFactory;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommListener {
 
@@ -44,7 +45,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         CheckBox cb = (CheckBox) findViewById(R.id.join_check_box);
         cb.setOnClickListener(this);
 
-        mBC = new BluetoothComm(this, getApplicationContext());
+        mBC = BluetoothComm.getInstance();
+        mBC.init(this, getApplicationContext()); // Must only be done once in entire app
+        //mBC = new BluetoothComm(this, getApplicationContext());
         mBC.listen(true); // Start listening for incoming connections
     }
 
@@ -95,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (b.getId()) {
             case R.id.play_btn:
                 Intent i0 = new Intent(this, SetupActivity.class);
+                i0.putExtra("active",true); // Store key somewhere intelligent
                 startActivity(i0);
                 break;
             case R.id.settings_btn:
@@ -112,9 +116,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public void onDeviceFound(String name,String address) {} // Callback not needed
+    public void onDeviceFound(String name,String address) {Log.d(LOGTAG,"Unused callback called");} // Callback not needed
 
-    public void onReceiveMessage(JSONObject msg)
+    public void onPlayerConnected(int pos)
+    {
+        Intent i0 = new Intent(this, SetupActivity.class);
+        i0.putExtra("active",false); // Store key somewhere intelligent
+        i0.putExtra("pos_inviter",pos);
+        startActivity(i0);
+    }
+
+    public void onReceiveMessage(final JSONObject msg)
     {
         // For DEBUG purposes just display an alert saying that we got a message
         final JSONObject finalMsg = msg;
@@ -122,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+
                     AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
                     alertDialog.setTitle("DEBUG");
                     alertDialog.setMessage("Got a message !! Receiver at pos: "
@@ -134,9 +147,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 }
                             });
                     alertDialog.show();
+
+
+
                 }
             });
 
         } else Log.d(LOGTAG, "Message was null");
+
+        /*
+        if (mMF.getType(msg).equals(MessageFactory.INVITE_MESSAGE)) {
+            int sender = mMF.getSender(msg);
+            Log.d(LOGTAG,"Got INVITE message from player " + Integer.toString(sender));
+            Intent i0 = new Intent(this, SetupActivity.class);
+            i0.putExtra("active",false); // Store key somewhere intelligent
+            startActivity(i0);
+        }*/
     }
 }

@@ -35,6 +35,7 @@ public class SetupActivity extends AppCompatActivity
     private ImageButton[] mImageButtons = new ImageButton[3];
     private Player mCurrentPlayer = null;
     private MessageFactory mMF = new MessageFactory();
+    private boolean mActive; // True iff this is the one who invites others
 
 
     @Override
@@ -42,6 +43,8 @@ public class SetupActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setup);
+
+        mActive = getIntent().getBooleanExtra("active",false);
 
         ImageButton b1 = (ImageButton) findViewById(R.id.player1_btn);
         mImageButtons[0] = b1;
@@ -53,10 +56,29 @@ public class SetupActivity extends AppCompatActivity
         mImageButtons[2] = b3;
         b3.setOnClickListener(this);
 
+        if (!mActive) {
+            int inviterPos = getIntent().getIntExtra("pos_inviter",-1);
+            switch (inviterPos) {
+                case 1:
+                    b1.setImageResource(R.drawable.occupied_selector);
+                    break;
+                case 2:
+                    b2.setImageResource(R.drawable.occupied_selector);
+                    break;
+                case 3:
+                    b3.setImageResource(R.drawable.occupied_selector);
+                    break;
+            }
+        }
+
         // DEBUG - Test message button - remove later
         Button b = (Button) findViewById(R.id.test_msg_btn1);
         b.setOnClickListener(this);
         b = (Button) findViewById(R.id.test_msg_btn3);
+        b.setOnClickListener(this);
+        b = (Button) findViewById(R.id.inv_msg_p1_btn);
+        b.setOnClickListener(this);
+        b = (Button) findViewById(R.id.inv_msg_p3_btn);
         b.setOnClickListener(this);
 
         // TODO: Ask user how many players
@@ -73,9 +95,9 @@ public class SetupActivity extends AppCompatActivity
                         String entry = (String) parent.getItemAtPosition(position);
                         if (mCurrentPlayer != null) {
                             mBC.invite(mCurrentPlayer, entry);
-                        } else {
-                            Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
-                        }
+                        } else Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
+
+
 
                         // TODO: Somewhere in here it must be checked whether all seats have been filled.
                         // TODO: If this is the case the rest of the connection must be set between
@@ -83,16 +105,18 @@ public class SetupActivity extends AppCompatActivity
                     }
                 });
 
-
-        mBC = new BluetoothComm(this, getApplicationContext());
+        //mBC = new BluetoothComm(this, getApplicationContext());
+        mBC = BluetoothComm.getInstance();
+        mBC.registerListener(this);
         mBC.scan();
+
 
         // Create Game
         // TODO: Do according to what the user wants 2,3,4 players
         // TODO: -> Do in the end when everything works for 3
         initGame(3);
 
-
+        addPairedDevicesToList();
         setEnableListView(false);
     }
 
@@ -157,13 +181,23 @@ public class SetupActivity extends AppCompatActivity
             // DEBUG
             case R.id.test_msg_btn1:
                 // Send test message to player at position 1
-                JSONObject msg = (new MessageFactory()).createMessage(MessageFactory.MOCK_MESSAGE, 0, null);
+                JSONObject msg = mMF.createMessage(MessageFactory.MOCK_MSG, 0,null);
                 mBC.sendMessageToPlayer(msg,mGame.getPlayer(1));
                 break;
             case R.id.test_msg_btn3:
                 // Send test message to player at position 3
-                JSONObject msg1 = (new MessageFactory()).createMessage(MessageFactory.MOCK_MESSAGE, 0, null);
+                JSONObject msg1 = mMF.createMessage(MessageFactory.MOCK_MSG, 0,null);
                 mBC.sendMessageToPlayer(msg1, mGame.getPlayer(3));
+                break;
+            case R.id.inv_msg_p1_btn:
+                // Send test message to player at position 1
+                JSONObject msg2 = mMF.createMessage(MessageFactory.INVITE_MSG, 0,mMF.inviteMessageBody(1,0));
+                mBC.sendMessageToPlayer(msg2,mGame.getPlayer(1));
+                break;
+            case R.id.inv_msg_p3_btn:
+                // Send test message to player at position 3
+                JSONObject msg3 = mMF.createMessage(MessageFactory.INVITE_MSG, 0,mMF.inviteMessageBody(3,0));
+                mBC.sendMessageToPlayer(msg3, mGame.getPlayer(3));
                 break;
         }
         // Check if no button is selected -> need to disable list if none is and invalidate current player
@@ -182,6 +216,7 @@ public class SetupActivity extends AppCompatActivity
      * BluetoothComm callbacks
      *
      */
+
 
 
     // Populate listview as soon as devices found or changed
@@ -229,12 +264,76 @@ public class SetupActivity extends AppCompatActivity
         } else Log.d(LOGTAG, "Message was null");
     }
 
+    public void onPlayerConnected(int pos)
+    {
+
+        ImageButton b = null;
+        switch (pos) {
+            case 1:
+                b = (ImageButton) findViewById(R.id.player1_btn);
+                break;
+            case 2:
+                b = (ImageButton) findViewById(R.id.player2_btn);
+                break;
+            case 3:
+                b = (ImageButton) findViewById(R.id.player3_btn);
+                break;
+        }
+        if (b!= null) {
+            final ImageButton button = b;
+            try {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(LOGTAG, "Changing background of button...");
+                        button.setImageResource(R.drawable.occupied_selector);
+                    }
+                });
+            } catch (NullPointerException e) {e.printStackTrace();}
+        }
+
+        List<Player> players = mGame.getAllPlayers();
+        int connectedPlayers = 1; // We consider ourselves as connected
+        for (Player p : players) {
+            if (p.isConnected()) connectedPlayers++;
+        }
+        if (connectedPlayers == mGame.getNrPlayer()) {
+            Log.d(LOGTAG, "We are connected to all other players.");
+
+            // If active player tell the others to connect between each other
+            if (mActive) {
+                // TODO: general case - this works only for three - else it would have more pairs
+                mBC.remoteInvite(mGame.getPlayer(1),mGame.getPlayer(3));
+            }
+
+        }
+
+    }
+
 
     /**
      *
      * Helper functions
      *
      */
+
+
+    private void addPairedDevicesToList()
+    {
+        List<String> entries = mBC.getPairedDeviceNamesAdresses();
+        if (mAdapter == null) {
+            // First call -> initialize Listadapter
+            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
+            mDevicesListView.setAdapter(mAdapter);
+        } else {
+            // Use Listadapter which is already initialized
+            for (String entry : entries) {
+                mAdapter.add(entry);
+
+            }
+            mAdapter.notifyDataSetChanged();
+        }
+    }
 
     // TODO: Shows dialog where user can decide how many players want to participate
     private void showDialog()
@@ -262,13 +361,12 @@ public class SetupActivity extends AppCompatActivity
      */
     private void setCurrentPlayer(Player p)
     {
-        if (p != null)
-            Log.d(LOGTAG,"Setting current player: " + Integer.toString(p.getPosition()));
-        else
-            Log.d(LOGTAG, "Set current player to null");
-        if (mCurrentPlayer != null && !mCurrentPlayer.equals(p))
+        if (p != null)  Log.d(LOGTAG,"Setting current player: " + Integer.toString(p.getPosition()));
+        else Log.d(LOGTAG, "Set current player to null");
+        if (mCurrentPlayer != null && !mCurrentPlayer.equals(p)) {
             // TODO: Ok for multiple connections?
-            mBC.disconnect();
+            // mBC.disconnect();
+        }
         mCurrentPlayer = p; // Even if null
     }
 
