@@ -11,7 +11,7 @@ import org.json.JSONObject;
 
 public interface BluetoothCommListener {
 
-    void onDeviceFound(String name);
+    void onDeviceFound(String name,String address);
     void onReceiveMessage(JSONObject msg);
 
 }

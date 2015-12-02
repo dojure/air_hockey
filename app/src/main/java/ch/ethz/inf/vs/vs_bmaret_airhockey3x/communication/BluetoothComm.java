@@ -74,7 +74,9 @@ public class BluetoothComm implements BluetoothServicesListener {
             // TODO: Should we only consider mDevices with nonnull name??
             if (d != null && d.getName() != null) {
                 mDevices.add(d);
-                mListener.onDeviceFound(d.getName());
+                String name = d.getName();
+                String address = d.getAddress();
+                mListener.onDeviceFound(name, address);
             }
         }
 
@@ -103,7 +105,7 @@ public class BluetoothComm implements BluetoothServicesListener {
      * @param player    Player to whom the device should be associated to
      * @param name      Name of device
      */
-    public void invite(Player player, String name)
+    public void invite(Player player, String entry)
     {
         if(player != null) {
             mCurrentPlayer = player;
@@ -112,7 +114,8 @@ public class BluetoothComm implements BluetoothServicesListener {
             // It should not be possible that a device occupies 2 seats in the game
 
             for (BluetoothDevice d : mDevices) {
-                if (d.getName().equals(name)) {
+                String compare = d.getName() + " " + d.getAddress();
+                if (compare.equals(entry)) {
 
                     // Open a connection to the device at the specific player
                     mBS.connect(d, player);
@@ -203,7 +206,9 @@ public class BluetoothComm implements BluetoothServicesListener {
                     // Consider only mDevices with nonnull name??
                     if (device.getName() != null) {
                         mDevices.add(device);
-                        mListener.onDeviceFound(device.getName());
+                        String name = device.getName();
+                        String address = device.getAddress();
+                        mListener.onDeviceFound(name, address);
                     }
                 }
             } else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {

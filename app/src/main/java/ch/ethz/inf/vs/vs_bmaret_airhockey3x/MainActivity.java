@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public void onDeviceFound(String name) {} // Callback not needed
+    public void onDeviceFound(String name,String address) {} // Callback not needed
 
     public void onReceiveMessage(JSONObject msg)
     {

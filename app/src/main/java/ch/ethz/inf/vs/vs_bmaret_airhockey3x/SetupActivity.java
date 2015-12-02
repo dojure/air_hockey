@@ -185,17 +185,19 @@ public class SetupActivity extends AppCompatActivity
 
 
     // Populate listview as soon as devices found or changed
-    public void onDeviceFound(String name)
+    public void onDeviceFound(String name, String address)
     {
         if (mAdapter == null) {
             // First call -> initialize Listadapter
-            List<String> names = new ArrayList<>();
-            names.add(name);
-            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,names);
+            List<String> entries = new ArrayList<>();
+            String entry = name + " " + address;
+            entries.add(entry);
+            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
             mDevicesListView.setAdapter(mAdapter);
         } else {
             // Use Listadapter which is already initialized
-            mAdapter.add(name);
+            String entry = name + " " + address;
+            mAdapter.add(entry);
             mAdapter.notifyDataSetChanged();
         }
     }
