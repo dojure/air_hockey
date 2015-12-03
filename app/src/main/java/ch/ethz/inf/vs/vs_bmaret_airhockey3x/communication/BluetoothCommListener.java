@@ -17,5 +17,6 @@ public interface BluetoothCommListener {
     void onDeviceFound(String name,String address);
     void onReceiveMessage(Message msg);
     void onPlayerConnected(int pos);
+    void onStartConnecting();
 
 }

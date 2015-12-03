@@ -9,17 +9,17 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ListView;
-
-import org.json.JSONObject;
+import android.widget.ProgressBar;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.MessageFactory;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.ACKSetupMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.InviteMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.TestMessage;
@@ -32,12 +32,13 @@ public class SetupActivity extends AppCompatActivity
     final static String LOGTAG = "SetupActivity";
 
     private Game mGame;
+    private int mInviter = -1; // The player which went first into the setup screen (only not -1 if !mActive)
     private BluetoothComm mBC;
     private ListView mDevicesListView;
     private ArrayAdapter<String> mAdapter;
     private ImageButton[] mImageButtons = new ImageButton[3];
     private Player mCurrentPlayer = null;
-    //private MessageFactory mMF = new MessageFactory();
+    private int mSetupEnteredACKReceived = 0;
     private boolean mActive; // True iff this is the one who invites others
 
 
@@ -59,19 +60,14 @@ public class SetupActivity extends AppCompatActivity
         mImageButtons[2] = b3;
         b3.setOnClickListener(this);
 
+        CheckBox cb = (CheckBox) findViewById(R.id.ready_ckbox);
+        cb.setOnClickListener(this);
+
+        // Freeze buttons for players which are not the leader
         if (!mActive) {
-            int inviterPos = getIntent().getIntExtra("pos_inviter",-1);
-            switch (inviterPos) {
-                case 1:
-                    b1.setImageResource(R.drawable.occupied_selector);
-                    break;
-                case 2:
-                    b2.setImageResource(R.drawable.occupied_selector);
-                    break;
-                case 3:
-                    b3.setImageResource(R.drawable.occupied_selector);
-                    break;
-            }
+            b1.setEnabled(false);
+            b2.setEnabled(false);
+            b3.setEnabled(false);
         }
 
         // DEBUG - Test message button - remove later
@@ -79,48 +75,55 @@ public class SetupActivity extends AppCompatActivity
         b.setOnClickListener(this);
         b = (Button) findViewById(R.id.test_msg_btn3);
         b.setOnClickListener(this);
-        b = (Button) findViewById(R.id.inv_msg_p1_btn);
-        b.setOnClickListener(this);
-        b = (Button) findViewById(R.id.inv_msg_p3_btn);
-        b.setOnClickListener(this);
 
         // TODO: Ask user how many players
         //showDialog();
 
         // Initialize the ListView
         // Callback for clicking on ListView
-        // Set mCurrentPlayer to the right (the one we clicked on) Bluetooth device
         mDevicesListView = (ListView) findViewById(R.id.devices_list);
         mDevicesListView.setOnItemClickListener(
                 new AdapterView.OnItemClickListener() {
                     public void onItemClick(AdapterView<?> parent, View arg1, int position, long arg3) {
-
                         String entry = (String) parent.getItemAtPosition(position);
                         if (mCurrentPlayer != null) {
-                            mBC.invite(mCurrentPlayer, entry);
+                            // Invite other player
+                            mBC.invite(mCurrentPlayer.getPosition(), entry);
                         } else Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
-
-
-
-                        // TODO: Somewhere in here it must be checked whether all seats have been filled.
-                        // TODO: If this is the case the rest of the connection must be set between
-                        // TODO: non host players
                     }
                 });
 
-        //mBC = new BluetoothComm(this, getApplicationContext());
-        mBC = BluetoothComm.getInstance();
-        mBC.registerListener(this);
-        mBC.scan();
-
-
-        // Create Game
-        // TODO: Do according to what the user wants 2,3,4 players
-        // TODO: -> Do in the end when everything works for 3
         initGame(3);
+
+        mBC = BluetoothComm.getInstance();
+        mBC.setNoConnections(mGame.getNrPlayer());
+        mBC.registerListener(this);
+        if (mActive) mBC.scan(); // Scan only if leader
 
         addPairedDevicesToList();
         setEnableListView(false);
+
+        if (!mActive) {
+            mInviter = getIntent().getIntExtra("pos_inviter",-1);
+            mGame.getPlayer(mInviter).setConnected(true);
+            switch (mInviter) {
+                case 1:
+                    b1.setImageResource(R.drawable.occupied_selector);
+                    Message msg1 = new ACKSetupMessage(1,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
+                    mBC.sendMessage(msg1);
+                    break;
+                case 2:
+                    b2.setImageResource(R.drawable.occupied_selector);
+                    Message msg2 = new ACKSetupMessage(2,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
+                    mBC.sendMessage(msg2);
+                    break;
+                case 3:
+                    b3.setImageResource(R.drawable.occupied_selector);
+                    Message msg3 = new ACKSetupMessage(3,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
+                    mBC.sendMessage(msg3);
+                    break;
+            }
+        }
     }
 
 
@@ -138,8 +141,8 @@ public class SetupActivity extends AppCompatActivity
      *
      * On click on button a new player is initialized and added to the game at the respective position.
      * As long as the button stays selected the corresponding player is stored in mCurrentPlayer.
-     * If the user then selects a BluetoothDevice from the now enabled list; The Bluetooth device
-     * will be added to the player.
+     * If the user then selects a BluetoothDevice from the now enabled list; The connection will be
+     * established
      *
      * To send a test message:
      * 1. click on player you want
@@ -183,28 +186,12 @@ public class SetupActivity extends AppCompatActivity
 
             // DEBUG
             case R.id.test_msg_btn1:
-                // Send test message to player at position 1
-                //JSONObject msg = mMF.createMessage(MessageFactory.MOCK_MSG, 0,null);
-                Message msg0 = new TestMessage(Message.TEST_MSG,0);
-                mBC.sendMessageToPlayer(msg0,mGame.getPlayer(1));
+                Message msg0 = new TestMessage(1);
+                mBC.sendMessage(msg0);
                 break;
             case R.id.test_msg_btn3:
-                // Send test message to player at position 3
-                //JSONObject msg1 = mMF.createMessage(MessageFactory.MOCK_MSG, 0,null);
-                Message msg1 = new TestMessage(Message.TEST_MSG,0);
-                mBC.sendMessageToPlayer(msg1, mGame.getPlayer(3));
-                break;
-            case R.id.inv_msg_p1_btn:
-                // Send test message to player at position 1
-                //JSONObject msg2 = mMF.createMessage(MessageFactory.INVITE_MSG, 0,mMF.inviteMessageBody(1,0));
-                Message msg2 = new InviteMessage(Message.INVITE_MSG,0,1,0);
-                mBC.sendMessageToPlayer(msg2,mGame.getPlayer(1));
-                break;
-            case R.id.inv_msg_p3_btn:
-                // Send test message to player at position 3
-                //JSONObject msg3 = mMF.createMessage(MessageFactory.INVITE_MSG, 0,mMF.inviteMessageBody(3,0));
-                Message msg3 = new InviteMessage(Message.INVITE_MSG,0,3,0);
-                mBC.sendMessageToPlayer(msg3, mGame.getPlayer(3));
+                Message msg1 = new TestMessage(3);
+                mBC.sendMessage(msg1);
                 break;
         }
         // Check if no button is selected -> need to disable list if none is and invalidate current player
@@ -247,43 +234,74 @@ public class SetupActivity extends AppCompatActivity
 
     public void onReceiveMessage(Message msg)
     {
-        // For DEBUG purposes just display an alert saying that we got a message
         final Message finalMsg = msg;
-        if (msg != null){
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    AlertDialog alertDialog = new AlertDialog.Builder(SetupActivity.this).create();
-                    alertDialog.setTitle("DEBUG");
-                    alertDialog.setMessage("Got a message !! Receiver at pos: "
-                            + Integer.toString(finalMsg.getSender()) + " Message type: " +
-                            finalMsg.getType());
-                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.dismiss();
-                                }
-                            });
-                    alertDialog.show();
-                }
-            });
+        if (msg == null) {
+            Log.d(LOGTAG,"Received null message");
+            return;
+        }
+        String msgType = msg.getType();
+        Log.d(LOGTAG,"Received message with type " + msgType);
+        switch (msgType) {
+            case Message.TEST_MSG:
+                showMessage(msg);
+                break;
+            case Message.ACK_SETUP_MSG:
+                ACKSetupMessage ack = new ACKSetupMessage(msg);
+                handleAckMessage(ack);
+                break;
+            case Message.INVITE_MSG:
+            case Message.INVITE_REMOTE_MSG:
+            default:
+        }
 
-        } else Log.d(LOGTAG, "Message was null");
     }
 
+    @Override
+    public void onStartConnecting()
+    {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ProgressBar p = (ProgressBar) findViewById(R.id.progressBar);
+                p.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    @Override
     public void onPlayerConnected(int pos)
     {
-
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
+                bar.setVisibility(View.GONE);
+            }
+        });
+        mGame.getPlayer(pos).setConnected(true);
         ImageButton b = null;
         switch (pos) {
             case 1:
                 b = (ImageButton) findViewById(R.id.player1_btn);
+                // Invite player into game
+                if(mActive) {
+                    Message msg1 = new InviteMessage(1);
+                    mBC.sendMessage(msg1);
+                }
                 break;
             case 2:
                 b = (ImageButton) findViewById(R.id.player2_btn);
+                if(mActive) {
+                    Message msg1 = new InviteMessage(2);
+                    mBC.sendMessage(msg1);
+                }
                 break;
             case 3:
                 b = (ImageButton) findViewById(R.id.player3_btn);
+                if(mActive) {
+                    Message msg1 = new InviteMessage(3);
+                    mBC.sendMessage(msg1);
+                }
                 break;
         }
         if (b!= null) {
@@ -294,6 +312,7 @@ public class SetupActivity extends AppCompatActivity
                     public void run() {
                         Log.d(LOGTAG, "Changing background of button...");
                         button.setImageResource(R.drawable.occupied_selector);
+                        button.setSelected(false);
                     }
                 });
             } catch (NullPointerException e) {e.printStackTrace();}
@@ -307,10 +326,9 @@ public class SetupActivity extends AppCompatActivity
         if (connectedPlayers == mGame.getNrPlayer()) {
             Log.d(LOGTAG, "We are connected to all other players.");
 
-            // If active player tell the others to connect between each other
-            if (mActive) {
-                // TODO: general case - this works only for three - else it would have more pairs
-                mBC.remoteInvite(mGame.getPlayer(1),mGame.getPlayer(3));
+            if (!mActive) {
+                ACKSetupMessage ack = new ACKSetupMessage(mInviter, ACKSetupMessage.ALL_CONNECTED);
+                mBC.sendMessage(ack);
             }
 
         }
@@ -324,6 +342,28 @@ public class SetupActivity extends AppCompatActivity
      *
      */
 
+    private void handleAckMessage(ACKSetupMessage ack)
+    {
+        if (mActive && ack.getAckCode() == ACKSetupMessage.ENTERED_SETUP_ACTIVITY) {
+            mSetupEnteredACKReceived++;
+            if (mSetupEnteredACKReceived == mGame.getNrPlayer()-1) {
+                Log.d(LOGTAG,"All other players have entered the setup screen -> start remote inviting");
+                mBC.remoteInvite(1,3); // TODO: Make general this is only for three players
+            }
+        } else if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
+            if (mActive) {
+                ACKSetupMessage ack1 = new ACKSetupMessage(Message.BROADCAST,ACKSetupMessage.ALL_CONNECTED);
+                mBC.sendMessage(ack1);
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    CheckBox cb = (CheckBox) findViewById(R.id.ready_ckbox);
+                    cb.setEnabled(true);
+                }
+            });
+        }
+    }
 
     private void addPairedDevicesToList()
     {
@@ -351,6 +391,29 @@ public class SetupActivity extends AppCompatActivity
         dialog.setPositiveButton("OK", null);
         dialog.setCancelable(true);
         dialog.create().show();
+    }
+
+    // Show message in Dialog
+    private void showMessage(Message msg)
+    {
+        final Message finalMsg = msg;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivity.this).create();
+                alertDialog.setTitle("DEBUG");
+                alertDialog.setMessage("Got a message !! Receiver at pos: "
+                        + Integer.toString(finalMsg.getSender()) + " Message type: " +
+                        finalMsg.getType());
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
+            }
+        });
     }
 
     // Enable/disable mDevicesListView. Need to do the fading manually

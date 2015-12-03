@@ -112,57 +112,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     mBC.discoverable();
                 } else {
                     // TODO: Cancel discoverability
-                    // TODO: THis might be impossible
+                    // TODO: This might be impossible
                 }
         }
     }
 
     public void onDeviceFound(String name,String address) {Log.d(LOGTAG,"Unused callback called");} // Callback not needed
-
+    public void onStartConnecting() {Log.d(LOGTAG,"Unused callback called");}
     public void onPlayerConnected(int pos)
     {
+        // TODO: Show dialog which asks user first if he want to participate
         Intent i0 = new Intent(this, SetupActivity.class);
         i0.putExtra("active",false); // Store key somewhere intelligent
         i0.putExtra("pos_inviter",pos);
         startActivity(i0);
     }
 
-    public void onReceiveMessage(final Message msg)
-    {
-        // For DEBUG purposes just display an alert saying that we got a message
-        final Message finalMsg = msg;
-        if (msg != null){
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-
-                    AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-                    alertDialog.setTitle("DEBUG");
-                    alertDialog.setMessage("Got a message !! Sender at pos: "
-                            + Integer.toString(finalMsg.getSender()) + " Message type: " +
-                            finalMsg.getType());
-                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.dismiss();
-                                }
-                            });
-                    alertDialog.show();
-
-
-
-                }
-            });
-
-        } else Log.d(LOGTAG, "Message was null");
-
-        /*
-        if (mMF.getType(msg).equals(MessageFactory.INVITE_MESSAGE)) {
-            int sender = mMF.getSender(msg);
-            Log.d(LOGTAG,"Got INVITE message from player " + Integer.toString(sender));
-            Intent i0 = new Intent(this, SetupActivity.class);
-            i0.putExtra("active",false); // Store key somewhere intelligent
-            startActivity(i0);
-        }*/
-    }
+    public void onReceiveMessage(final Message msg) {}
 }

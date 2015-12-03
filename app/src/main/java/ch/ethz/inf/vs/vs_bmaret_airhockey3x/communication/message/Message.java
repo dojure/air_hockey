@@ -14,11 +14,16 @@ public class Message {
     public final static String TEST_MSG = "test";
     public final static String INVITE_MSG = "invite";
     public final static String INVITE_REMOTE_MSG = "invite_remote";
+    public final static String ACK_SETUP_MSG = "ack_setup";
+
+    // Use as position to broadcast
+    public final static int BROADCAST = -2;
 
     // Keys occuring in msg
     protected final static String HEADER_KEY = "header";
     protected final static String BODY_KEY = "body";
     protected final static String SENDER_KEY = "sender";
+    protected final static String RECEIVER_KEY = "receiver";
     protected final static String TYPE_KEY = "type";
 
 
@@ -26,19 +31,29 @@ public class Message {
     protected JSONObject mHeader;
     protected JSONObject mBody; // Let subclass set
     protected String mType;
+
+    /**
+     * IMPORTANT
+     * The receiver is the position relative to the sender
+     * The sender is the position relative to the receiver -> can be computed from sender
+     */
+    protected int mReceiver;
     protected int mSender;
 
-    protected Message(String type, int senderId)
+    protected Message(int receiver, String type)
     {
         // TODO: Check input
         mType = type;
-        mSender = senderId;
+        mReceiver = receiver;
+        mSender = 4 - receiver;
+        //mSender = senderId;
 
         try {
             mMsg = new JSONObject();
             mHeader = new JSONObject();
             mHeader.put(TYPE_KEY,mType);
-            mHeader.put(SENDER_KEY,senderId);
+            mHeader.put(RECEIVER_KEY,mReceiver);
+            mHeader.put(SENDER_KEY,mSender);
             mMsg.put(HEADER_KEY,mHeader);
         } catch (JSONException e) {e.printStackTrace();}
     }
@@ -53,6 +68,7 @@ public class Message {
                 mHeader = mMsg.getJSONObject(HEADER_KEY);
                 if (mMsg.has(BODY_KEY)) mBody = mMsg.getJSONObject(BODY_KEY);
                 mType = mHeader.getString(TYPE_KEY);
+                mReceiver = mHeader.getInt(RECEIVER_KEY);
                 mSender = mHeader.getInt(SENDER_KEY);
             }
         }
@@ -68,11 +84,19 @@ public class Message {
             mHeader = mMsg.getJSONObject(HEADER_KEY);
             if (mMsg.has(BODY_KEY)) mBody = mMsg.getJSONObject(BODY_KEY);
             mType = mHeader.getString(TYPE_KEY);
+            mReceiver = mHeader.getInt(RECEIVER_KEY);
             mSender = mHeader.getInt(SENDER_KEY);
         } catch(JSONException e) {e.printStackTrace();}
 
     }
 
+    // Not so elegant, need for broadcast
+    public void setReceiver(int receiver)
+    {
+        mReceiver = receiver;
+        mSender = 4 - receiver;
+    }
+    public int getReceiver() {return mReceiver;}
     public int getSender() {return mSender;}
     public String getType() {return mType;}
 

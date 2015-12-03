@@ -57,6 +57,7 @@ public class BluetoothServices {
     private HashMap<String,BluetoothSocket> mSocketsMap;
     private HashMap<String,TransmissionThread> mTransmissionThreadMap;
     private HashMap<Integer,String> mPositionToAddressMap;
+    private HashMap<String,List<Byte[]>> mPendingMessages;
 
 
     // TODO: The state is not locked properly
@@ -86,6 +87,7 @@ public class BluetoothServices {
         mDeviceAddresses = new ArrayList<>();
         mTransmissionThreadMap = new HashMap<>();
         mPositionToAddressMap = new HashMap<>();
+        mPendingMessages = new HashMap<>();
 
         mUUIDs = new UUID[6];
         mUUIDs[0] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a60");
@@ -176,7 +178,7 @@ public class BluetoothServices {
     //public synchronized void transmit(int playerPosition)
     public synchronized void transmit(String deviceAddr)
     {
-        Log.d(LOGTAG,"Connected");
+        Log.d(LOGTAG, "Connected");
 
         /*mTransmissionThread = new TransmissionThread(mSockets[playerPosition]);
         mTransmissionThread.start();
@@ -191,7 +193,8 @@ public class BluetoothServices {
 
         mTransmissionThread = new TransmissionThread(mSocketsMap.get(deviceAddr));
         mTransmissionThread.start();
-        mTransmissionThreadMap.put(deviceAddr,mTransmissionThread);
+        addNewTransmissionThread(mTransmissionThread, deviceAddr);
+        //mTransmissionThreadMap.put(deviceAddr, mTransmissionThread);
     }
 
     /**
@@ -229,11 +232,45 @@ public class BluetoothServices {
     public void send(int pos, byte[] bytes)
     {
         Log.d(LOGTAG, "Sending bytes");
-        //mTransmissionThreads[player.getPosition()].send(bytes);
         String deviceAddress = mPositionToAddressMap.get(new Integer(pos));
         if (deviceAddress == null) Log.d(LOGTAG,"Didnt find receiver address");
         TransmissionThread transmissionThread = mTransmissionThreadMap.get(deviceAddress);
-        transmissionThread.send(bytes);
+        if (transmissionThread != null) transmissionThread.send(bytes);
+        else {
+            Log.d(LOGTAG, "Couldnt send message because transmission thread doesnt exists; added bytes to pending list");
+            Byte[] toSend = new Byte[bytes.length];
+            for (int i = 0; i < toSend.length; i++) {
+                toSend[i] = new Byte(bytes[i]);
+            }
+            List<Byte[]> pending = mPendingMessages.get(deviceAddress);
+            if (pending != null) pending.add(toSend);
+            else pending = new ArrayList<>();
+            pending.add(toSend);
+            mPendingMessages.put(deviceAddress,pending); // Replace old list
+        }
+    }
+
+    public void broadcast(byte[] bytes)
+    {
+        Log.d(LOGTAG,"Broadcasting");
+        for (String addr: mPositionToAddressMap.values()) {
+            if (addr == null) Log.d(LOGTAG,"Didnt find receiver address");
+            TransmissionThread transmissionThread = mTransmissionThreadMap.get(addr);
+            if (transmissionThread != null) transmissionThread.send(bytes);
+            else {
+                Log.d(LOGTAG, "Couldnt send message because transmission thread doesnt exists; added bytes to pending list");
+                Byte[] toSend = new Byte[bytes.length];
+                for (int i = 0; i < toSend.length; i++) {
+                    toSend[i] = new Byte(bytes[i]);
+                }
+                List<Byte[]> pending = mPendingMessages.get(addr);
+                if (pending != null) pending.add(toSend);
+                else pending = new ArrayList<>();
+                pending.add(toSend);
+                mPendingMessages.put(addr,pending); // Replace old list
+            }
+        }
+
     }
 
     // Let client unregister
@@ -251,6 +288,38 @@ public class BluetoothServices {
 
 
     /**
+     * Add this thread to the collection. Check if there are any pending messages for this thread
+     * to send, if so send them right away.
+     * @param t             Thread to add
+     * @param deviceAddr    Associated device address
+     */
+    private void addNewTransmissionThread(TransmissionThread t, String deviceAddr)
+    {
+        mTransmissionThreadMap.put(deviceAddr, t);
+        List<Byte[]> pending = mPendingMessages.get(deviceAddr);
+        if (pending != null) {
+            for (Byte[] msg : pending) {
+                byte[] bytes = new byte[msg.length];
+                for (int i = 0; i < msg.length; i++) {
+                    bytes[i] = msg[i].byteValue();
+                }
+                t.send(bytes);
+            }
+            mPendingMessages.remove(deviceAddr);
+        }
+    }
+
+
+    public synchronized String getAddressForPoisition(int pos)
+    {
+        String addr = mPositionToAddressMap.get(new Integer(pos));
+        if (addr == null || addr.equals("")) Log.d(LOGTAG,"No address for position " + Integer.toString(pos));
+        return addr;
+    }
+
+
+
+    /**
      *
      * Threads
      *
@@ -264,8 +333,6 @@ public class BluetoothServices {
      */
     private class ListenThread extends Thread {
 
-        private BluetoothServerSocket mServerSocket;
-
         public ListenThread() {}
 
         public void run()
@@ -275,7 +342,7 @@ public class BluetoothServices {
                     if (uuid == null) {
                         Log.d(LOGTAG,"Somehow, uuid was null, skip");
                         continue;
-                    }
+                    } else Log.d(LOGTAG,"Listen with uuid " + uuid.toString());
                     BluetoothServerSocket serverSocket = mAdapter.listenUsingInsecureRfcommWithServiceRecord(NAME,uuid);
                     if (serverSocket == null) continue;
                     BluetoothSocket socket = serverSocket.accept();
@@ -301,7 +368,6 @@ public class BluetoothServices {
     }
 
 
-
     private BluetoothSocket getConnectedSocket(BluetoothDevice myBtServer, UUID uuidToTry) {
         BluetoothSocket myBSock;
         try {
@@ -309,7 +375,7 @@ public class BluetoothServices {
             myBSock.connect();
             return myBSock;
         } catch (IOException e) {
-            Log.d(LOGTAG, "IOException in getConnectedSocket", e);
+            Log.d(LOGTAG, "IOException in getConnectedSocket - uuid probably already in use");
         }
         return null;
     }
@@ -319,7 +385,6 @@ public class BluetoothServices {
      */
     private class ConnectThread extends Thread {
 
-        private int playerPosition;
         private String addr;
 
             public ConnectThread(String deviceAddress)
@@ -332,8 +397,10 @@ public class BluetoothServices {
                 BluetoothDevice server = mAdapter.getRemoteDevice(addr);
                 BluetoothSocket socket = null;
 
-                for (int i=0; i < mUUIDs.length && socket == null; i++){
+                for (int i = 0; i < mUUIDs.length && socket == null; i++){
                     UUID uuid = mUUIDs[i];
+                    if (uuid != null) Log.d(LOGTAG, "Try connecting with uuid " + uuid.toString());
+                    else Log.d(LOGTAG,"Somehow uuid was null while trying to connect");
                     for (int j= 0 ; j < 3 && socket == null; j++) {
                         socket = getConnectedSocket(server,uuid);
                         if (socket == null) {
@@ -345,13 +412,9 @@ public class BluetoothServices {
                 }
 
                 if (socket == null) Log.d(LOGTAG,"Tried all UUIDs but couldnt make connection");
-                //mSockets[playerPosition] = socket;
                 mSocketsMap.put(addr, socket);
                 transmit(addr);
             }
-
-
-
 
         public void cancel()
         {

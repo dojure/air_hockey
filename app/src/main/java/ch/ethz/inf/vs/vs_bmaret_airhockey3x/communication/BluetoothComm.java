@@ -8,15 +8,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.InviteMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.RemoteInviteMessage;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
 /**
  * Created by Valentin on 14/11/15.
@@ -34,14 +31,15 @@ public class BluetoothComm implements BluetoothServicesListener {
 
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothServices mBS;
-    //private MessageFactory mMF;
+    private int mNoConnections = -1; // Nr of connections that we must support
 
     private Boolean mScanning = false;
 
     /** List of paired and discovered devices*/
     private List<BluetoothDevice> mDevices = new ArrayList<>();
     /** Player that is currently selected*/
-    private Player mCurrentPlayer = null;
+    //private Player mCurrentPlayer = null;
+    private int mCurrentPlayerPos = -1;
 
 
     private static BluetoothComm ourInstance = new BluetoothComm();
@@ -100,6 +98,8 @@ public class BluetoothComm implements BluetoothServicesListener {
         }
     }
 
+    public void setNoConnections(int noConnections) {mNoConnections = noConnections;}
+
     public List<String> getPairedDeviceNamesAdresses()
     {
         List<String> result = new ArrayList<>();
@@ -123,13 +123,13 @@ public class BluetoothComm implements BluetoothServicesListener {
      * Invite a player (device) to the game.
      * Set the device of mCurrentPlayer to the invited device
      *
-     * @param player    Player to whom the device should be associated to
+     * @param playerPos  Player to whom the device should be associated to
      * @param entry      Name of device
      */
-    public void invite(Player player, String entry)
+    public void invite(int playerPos, String entry)
     {
-        if(player != null) {
-            mCurrentPlayer = player;
+        if(playerPos >= 0 && playerPos <= 3) {
+            mCurrentPlayerPos = playerPos;
 
             // TODO: Check whether this player was already invited and has a seat in the game
             // It should not be possible that a device occupies 2 seats in the game
@@ -137,21 +137,9 @@ public class BluetoothComm implements BluetoothServicesListener {
             for (BluetoothDevice d : mDevices) {
                 String compare = d.getName() + " " + d.getAddress();
                 if (compare.equals(entry)) {
-
                     // Open a connection to the device at the specific player
-                    mBS.connect(d.getAddress(), player.getPosition());
-
-                    // Send a message with an invitation for the game
-                    // TODO: Send a invitation message
-
-                    // If the player accepted set the device of the mCurrentPlayer to d
-                    // TODO: Check whether the player accepted the invitation, otherwise prompt an error
-                    // TODO: If the player accepts the invitation he should get to the "frozen" set up screen
-
-                    //mCurrentPlayer.setBDevice(d);
-
-                    // There is no need to finish the loop
-                    break;
+                    mBS.connect(d.getAddress(), mCurrentPlayerPos);
+                    mListener.onStartConnecting();
                 }
             }
 
@@ -160,14 +148,14 @@ public class BluetoothComm implements BluetoothServicesListener {
         }
     }
 
-    public void remoteInvite(Player p1, Player p2)
+    public void remoteInvite(int p1, int p2)
     {
         // Tell p1 to connect to p2
-        String addressP2 = p2.getBDevice();
+        String addressP2 = mBS.getAddressForPoisition(p2);
         //JSONObject msg = mMF.createMessage(MessageFactory.INVITE_REMOTE_MSG,
         //        0, mMF.remoteInviteMessageBody(p2.getPosition(),addressP2));
-        Message msg = new RemoteInviteMessage(Message.INVITE_REMOTE_MSG,0,p2.getPosition(),addressP2);
-        mBS.send(p1.getPosition(),msg.toBytes());
+        Message msg = new RemoteInviteMessage(p1,p2,addressP2);
+        mBS.send(p1,msg.toBytes());
     }
 
     /**
@@ -183,7 +171,7 @@ public class BluetoothComm implements BluetoothServicesListener {
      * @param enable    Either listen or disconnect
      */
     public void listen(Boolean enable) {
-        Log.d(LOGTAG,"Enable listening: " + Boolean.toString(enable));
+        Log.d(LOGTAG, "Enable listening: " + Boolean.toString(enable));
         if (enable)
             mBS.listen();
         else
@@ -209,16 +197,41 @@ public class BluetoothComm implements BluetoothServicesListener {
     /**
      * Sends a message to a specific player
      * @param msg       msg to be sent
-     * @param receiver  Player to receive it
      */
-    public void sendMessageToPlayer(Message msg, Player receiver)
+    public void sendMessage(Message msg)
     {
-        if (msg != null && receiver != null) {
-            Log.d(LOGTAG,"Sending message to receiver at pos " + receiver.getPosition());
+        if (msg != null) {
 
-            // TODO: Check if device ok?
+            if (msg.getReceiver() == Message.BROADCAST) {
+                Log.d(LOGTAG,"Broadcasting message");
 
-            mBS.send(receiver.getPosition(), msg.toBytes());
+                // Not so cool because we use information about the game
+                switch (mNoConnections) {
+                    case 1:
+                        msg.setReceiver(2);
+                        mBS.send(2,msg.toBytes());
+                        break;
+                    case 2:
+                        msg.setReceiver(1);
+                        mBS.send(1,msg.toBytes());
+                        msg.setReceiver(3);
+                        mBS.send(3,msg.toBytes());
+                        break;
+                    case 3:
+                        for (int i = 1; i < 4; i++) {
+                            msg.setReceiver(i);
+                            mBS.send(i,msg.toBytes());
+                        }
+                        break;
+                    default:
+                        Log.d(LOGTAG,"No connections not properly set, cannot broadcast.");
+                }
+            }
+            else {
+                Log.d(LOGTAG,"Sending message to receiver at pos " + msg.getReceiver());
+                mBS.send(msg.getReceiver(), msg.toBytes());
+            }
+
 
         } else Log.d(LOGTAG,"There is a problem sending a message to a receiver");
     }
@@ -278,30 +291,27 @@ public class BluetoothComm implements BluetoothServicesListener {
 
         switch (msgType) {
             case Message.INVITE_MSG:
-                /**
-                 * S: 2      I: 1    S: 2      I: 3
-                 * 1   3 --> 0   2,  1   3 --> 2   0
-                 *   0         3       0         1
-                 * E.g. if assigned pos =1 then the initiator is at pos 3 (first example)
-                 */
                 InviteMessage mInv = new InviteMessage(msg);
-                int assignedPos = mInv.getAssignedPos();
-                int senderPos = mInv.getSenderPos();
-                int relPos = 4-assignedPos;
-                mBS.setPosForLastConnectedDevice(relPos);
-                mListener.onPlayerConnected(relPos);
+                /*int assignedPos = mInv.getAssignedPos();
+                //int senderPos = mInv.getSenderPos();
+                int relPos = 4-assignedPos;*/
+                mBS.setPosForLastConnectedDevice(msg.getSender());
+                mListener.onPlayerConnected(msg.getSender());
+                mCurrentPlayerPos = -1; // Not sure if needed bcz we are dealing at the moment with the sender
                 break;
             case Message.INVITE_REMOTE_MSG:
                 RemoteInviteMessage mRem = new RemoteInviteMessage(msg);
-                int absPos = mRem.getAbsPos();
+                int absPos = mRem.getTargetPos();
                 String deviceAddress = mRem.getAddress();
                 Log.d(LOGTAG, "Got remote invite messgae with abspos " + Integer.toString(absPos) +
                         " and address " + deviceAddress);
                 // TODO: General case this works only for 3
-                relPos = 4-absPos;
-                mBS.setPosForAddress(relPos,deviceAddress);
-                mBS.connect(deviceAddress, relPos);
-                mListener.onPlayerConnected(relPos);
+                mCurrentPlayerPos = 4-absPos;
+                mBS.setPosForAddress(mCurrentPlayerPos, deviceAddress);
+                mBS.connect(deviceAddress, mCurrentPlayerPos);
+                mListener.onStartConnecting();
+                InviteMessage invm = new InviteMessage(mCurrentPlayerPos);
+                mBS.send(mCurrentPlayerPos, invm.toBytes());
                 break;
         }
     }
@@ -309,32 +319,11 @@ public class BluetoothComm implements BluetoothServicesListener {
     public void onConnected(String deviceAddr)
     {
         Log.d(LOGTAG, "Connected to " + deviceAddr);
-        if (mCurrentPlayer != null) {
-            mCurrentPlayer.setBDevice(deviceAddr);
-            mListener.onPlayerConnected(mCurrentPlayer.getPosition());
-        } else Log.d(LOGTAG,"mCurrenPlayer was null!");
+        if (mCurrentPlayerPos != -1) {
+            //mCurrentPlayer.setBDevice(deviceAddr);
+            mListener.onPlayerConnected(mCurrentPlayerPos);
+            mCurrentPlayerPos = -1;
+        } else Log.d(LOGTAG,"mCurrenPlayer was -1!");
 
     }
-
-    /*
-    /**
-     * Get relative position of 'other'
-     * @param own       Relative position with respect to 'other' of us
-     * @param otherAbs  Absolute position of 'other'
-     * @return          Relative position of 'other' with respect to us
-     */
-    /*
-    private int gerRelativePosition(int own, int otherAbs, int numberOfPlayers)
-    {
-        int res = -1;
-        switch (numberOfPlayers) {
-            case 3:
-                res = 4-own;
-            default:
-                Log.d(LOGTAG,"gerRelativePosition not implemented for " + Integer.toString(numberOfPlayers) + " players");
-
-        }
-        return res;
-    }
-    */
 }

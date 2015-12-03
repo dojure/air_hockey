@@ -1,6 +1,7 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x.game;
 
 import android.bluetooth.BluetoothDevice;
+import android.util.Log;
 
 /**
  * Created by Valentin on 14/11/15.
@@ -12,24 +13,23 @@ import android.bluetooth.BluetoothDevice;
 
 public class Player {
 
+    private final static String LOGTAG = "Player";
+
     private final int mPosition;
-    private String mBDeviceAddress = null;
-    private int mRandId;
     private boolean mReady = false;
+    private boolean mConnected = false;
 
     public Player(int pos)
     {
         mPosition = pos;
-        mRandId = (int) Math.random()*2048;
     }
-
-    // Getter and setter for BluetoothDevice
-    public void setBDevice(String deviceAddress) {mBDeviceAddress = deviceAddress;}
-    public String getBDevice() {return mBDeviceAddress;}
-    public int getRandId() {return mRandId;}
 
     public int getPosition() {return mPosition;}
     public void setReady(boolean ready) {mReady = ready;}
     public boolean isReady() {return mReady;}
-    public boolean isConnected() {return mBDeviceAddress != null;}
+    public boolean isConnected() {return mConnected;}
+    public void setConnected(boolean connected)
+    {
+        Log.d(LOGTAG,"Player " + Integer.toString(mPosition) + " is now " + Boolean.toString(connected) + " connected");
+        mConnected = connected;}
 }
