@@ -21,6 +21,7 @@ import java.util.List;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.MessageFactory;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommListener {
@@ -28,7 +29,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final static String LOGTAG = "MainActivity";
 
     private BluetoothComm mBC;
-    private MessageFactory mMF = new MessageFactory();
+    //private MessageFactory mMF = new MessageFactory();
 
 
     @Override
@@ -126,10 +127,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         startActivity(i0);
     }
 
-    public void onReceiveMessage(final JSONObject msg)
+    public void onReceiveMessage(final Message msg)
     {
         // For DEBUG purposes just display an alert saying that we got a message
-        final JSONObject finalMsg = msg;
+        final Message finalMsg = msg;
         if (msg != null){
             runOnUiThread(new Runnable() {
                 @Override
@@ -137,9 +138,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
                     alertDialog.setTitle("DEBUG");
-                    alertDialog.setMessage("Got a message !! Receiver at pos: "
-                            + Integer.toString(mMF.getSender(finalMsg)) + " Message type: " +
-                            mMF.getType(finalMsg));
+                    alertDialog.setMessage("Got a message !! Sender at pos: "
+                            + Integer.toString(finalMsg.getSender()) + " Message type: " +
+                            finalMsg.getType());
                     alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int which) {

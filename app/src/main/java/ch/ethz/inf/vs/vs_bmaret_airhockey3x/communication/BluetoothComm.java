@@ -13,6 +13,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.InviteMessage;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.RemoteInviteMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
 /**
@@ -31,7 +34,7 @@ public class BluetoothComm implements BluetoothServicesListener {
 
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothServices mBS;
-    private MessageFactory mMF;
+    //private MessageFactory mMF;
 
     private Boolean mScanning = false;
 
@@ -49,7 +52,7 @@ public class BluetoothComm implements BluetoothServicesListener {
         mContext = appContext;
         mListener = listener;
 
-        mMF = new MessageFactory();
+        //mMF = new MessageFactory();
         mBS = new BluetoothServices(this);
 
         // Get Bluetooth adapter
@@ -161,9 +164,10 @@ public class BluetoothComm implements BluetoothServicesListener {
     {
         // Tell p1 to connect to p2
         String addressP2 = p2.getBDevice();
-        JSONObject msg = mMF.createMessage(MessageFactory.INVITE_REMOTE_MSG,
-                0, mMF.remoteInviteMessageBody(p2.getPosition(),addressP2));
-        mBS.send(p1.getPosition(),MessageFactory.msgToBytes(msg));
+        //JSONObject msg = mMF.createMessage(MessageFactory.INVITE_REMOTE_MSG,
+        //        0, mMF.remoteInviteMessageBody(p2.getPosition(),addressP2));
+        Message msg = new RemoteInviteMessage(Message.INVITE_REMOTE_MSG,0,p2.getPosition(),addressP2);
+        mBS.send(p1.getPosition(),msg.toBytes());
     }
 
     /**
@@ -207,14 +211,14 @@ public class BluetoothComm implements BluetoothServicesListener {
      * @param msg       msg to be sent
      * @param receiver  Player to receive it
      */
-    public void sendMessageToPlayer(JSONObject msg, Player receiver)
+    public void sendMessageToPlayer(Message msg, Player receiver)
     {
         if (msg != null && receiver != null) {
             Log.d(LOGTAG,"Sending message to receiver at pos " + receiver.getPosition());
 
             // TODO: Check if device ok?
 
-            mBS.send(receiver.getPosition(), MessageFactory.msgToBytes(msg));
+            mBS.send(receiver.getPosition(), msg.toBytes());
 
         } else Log.d(LOGTAG,"There is a problem sending a message to a receiver");
     }
@@ -266,28 +270,31 @@ public class BluetoothComm implements BluetoothServicesListener {
 
     public void onReceiveBytes(byte[] bytes, int noBytes)
     {
-        JSONObject msg = MessageFactory.bytesToMsg(bytes, noBytes);
-        Log.d(LOGTAG,"Receiving message " + mMF.getType(msg));
+        //JSONObject msg = MessageFactory.bytesToMsg(bytes, noBytes);
+        Message msg = new Message(bytes, noBytes);
+        String msgType = msg.getType();
+        Log.d(LOGTAG,"Receiving message " + msgType);
         mListener.onReceiveMessage(msg);
 
-        String msgType = mMF.getType(msg);
         switch (msgType) {
-            case MessageFactory.INVITE_MSG:
+            case Message.INVITE_MSG:
                 /**
                  * S: 2      I: 1    S: 2      I: 3
                  * 1   3 --> 0   2,  1   3 --> 2   0
                  *   0         3       0         1
                  * E.g. if assigned pos =1 then the initiator is at pos 3 (first example)
                  */
-                int assignedPos = mMF.getAssignedPosition(msg);
-                int senderPos = mMF.getSenderPos(msg);
+                InviteMessage mInv = new InviteMessage(msg);
+                int assignedPos = mInv.getAssignedPos();
+                int senderPos = mInv.getSenderPos();
                 int relPos = 4-assignedPos;
                 mBS.setPosForLastConnectedDevice(relPos);
                 mListener.onPlayerConnected(relPos);
                 break;
-            case MessageFactory.INVITE_REMOTE_MSG:
-                int absPos = mMF.getRemoteInviteAbsPos(msg);
-                String deviceAddress = mMF.getRemoteInviteAddress(msg);
+            case Message.INVITE_REMOTE_MSG:
+                RemoteInviteMessage mRem = new RemoteInviteMessage(msg);
+                int absPos = mRem.getAbsPos();
+                String deviceAddress = mRem.getAddress();
                 Log.d(LOGTAG, "Got remote invite messgae with abspos " + Integer.toString(absPos) +
                         " and address " + deviceAddress);
                 // TODO: General case this works only for 3

@@ -7,6 +7,12 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 
+
+/**
+ *  DO NOT USE THIS CLASS. Use the Message class instead
+ */
+
+
 /**
  * Created by Valentin on 15/11/15.
  *
@@ -33,7 +39,7 @@ public class MessageFactory {
     private final static String ADDRESS_KEY = "address";
 
 
-    public MessageFactory() {}
+    private MessageFactory() {}
 
     /**
      * Converter msg -> bytes

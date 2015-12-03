@@ -20,6 +20,9 @@ import java.util.List;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.MessageFactory;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.InviteMessage;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.TestMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Game;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
@@ -34,7 +37,7 @@ public class SetupActivity extends AppCompatActivity
     private ArrayAdapter<String> mAdapter;
     private ImageButton[] mImageButtons = new ImageButton[3];
     private Player mCurrentPlayer = null;
-    private MessageFactory mMF = new MessageFactory();
+    //private MessageFactory mMF = new MessageFactory();
     private boolean mActive; // True iff this is the one who invites others
 
 
@@ -181,22 +184,26 @@ public class SetupActivity extends AppCompatActivity
             // DEBUG
             case R.id.test_msg_btn1:
                 // Send test message to player at position 1
-                JSONObject msg = mMF.createMessage(MessageFactory.MOCK_MSG, 0,null);
-                mBC.sendMessageToPlayer(msg,mGame.getPlayer(1));
+                //JSONObject msg = mMF.createMessage(MessageFactory.MOCK_MSG, 0,null);
+                Message msg0 = new TestMessage(Message.TEST_MSG,0);
+                mBC.sendMessageToPlayer(msg0,mGame.getPlayer(1));
                 break;
             case R.id.test_msg_btn3:
                 // Send test message to player at position 3
-                JSONObject msg1 = mMF.createMessage(MessageFactory.MOCK_MSG, 0,null);
+                //JSONObject msg1 = mMF.createMessage(MessageFactory.MOCK_MSG, 0,null);
+                Message msg1 = new TestMessage(Message.TEST_MSG,0);
                 mBC.sendMessageToPlayer(msg1, mGame.getPlayer(3));
                 break;
             case R.id.inv_msg_p1_btn:
                 // Send test message to player at position 1
-                JSONObject msg2 = mMF.createMessage(MessageFactory.INVITE_MSG, 0,mMF.inviteMessageBody(1,0));
+                //JSONObject msg2 = mMF.createMessage(MessageFactory.INVITE_MSG, 0,mMF.inviteMessageBody(1,0));
+                Message msg2 = new InviteMessage(Message.INVITE_MSG,0,1,0);
                 mBC.sendMessageToPlayer(msg2,mGame.getPlayer(1));
                 break;
             case R.id.inv_msg_p3_btn:
                 // Send test message to player at position 3
-                JSONObject msg3 = mMF.createMessage(MessageFactory.INVITE_MSG, 0,mMF.inviteMessageBody(3,0));
+                //JSONObject msg3 = mMF.createMessage(MessageFactory.INVITE_MSG, 0,mMF.inviteMessageBody(3,0));
+                Message msg3 = new InviteMessage(Message.INVITE_MSG,0,3,0);
                 mBC.sendMessageToPlayer(msg3, mGame.getPlayer(3));
                 break;
         }
@@ -238,10 +245,10 @@ public class SetupActivity extends AppCompatActivity
     }
 
 
-    public void onReceiveMessage(JSONObject msg)
+    public void onReceiveMessage(Message msg)
     {
         // For DEBUG purposes just display an alert saying that we got a message
-        final JSONObject finalMsg = msg;
+        final Message finalMsg = msg;
         if (msg != null){
             runOnUiThread(new Runnable() {
                 @Override
@@ -249,8 +256,8 @@ public class SetupActivity extends AppCompatActivity
                     AlertDialog alertDialog = new AlertDialog.Builder(SetupActivity.this).create();
                     alertDialog.setTitle("DEBUG");
                     alertDialog.setMessage("Got a message !! Receiver at pos: "
-                            + Integer.toString(mMF.getSender(finalMsg)) + " Message type: " +
-                            mMF.getType(finalMsg));
+                            + Integer.toString(finalMsg.getSender()) + " Message type: " +
+                            finalMsg.getType());
                     alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int which) {

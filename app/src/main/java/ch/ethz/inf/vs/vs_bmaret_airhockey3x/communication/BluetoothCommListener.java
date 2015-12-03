@@ -2,6 +2,7 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication;
 
 import org.json.JSONObject;
 
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
 /**
@@ -14,7 +15,7 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 public interface BluetoothCommListener {
 
     void onDeviceFound(String name,String address);
-    void onReceiveMessage(JSONObject msg);
+    void onReceiveMessage(Message msg);
     void onPlayerConnected(int pos);
 
 }
