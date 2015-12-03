@@ -1,33 +1,24 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.MessageFactory;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommListener {
 
     private final static String LOGTAG = "MainActivity";
 
     private BluetoothComm mBC;
-    private MessageFactory mMF = new MessageFactory();
 
 
     @Override
@@ -44,7 +35,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         CheckBox cb = (CheckBox) findViewById(R.id.join_check_box);
         cb.setOnClickListener(this);
 
-        mBC = new BluetoothComm(this, getApplicationContext());
+        mBC = BluetoothComm.getInstance();
+        mBC.init(this, getApplicationContext()); // Must only be done once in entire app
         mBC.listen(true); // Start listening for incoming connections
     }
 
@@ -71,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         super.onDestroy();
         mBC.unregisterListener(this);
+        mBC.discoverable(false);
     }
 
     @Override
@@ -95,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (b.getId()) {
             case R.id.play_btn:
                 Intent i0 = new Intent(this, SetupActivity.class);
+                i0.putExtra(SetupActivity.ACTIVE,true);
                 startActivity(i0);
                 break;
             case R.id.settings_btn:
@@ -103,38 +97,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.join_check_box:
                 // We need to make ourselves discoverable if we are not paired yet
-                if (((CheckBox) b).isChecked()) {
-                    mBC.discoverable();
-                } else {
-                    // TODO: Cancel discoverability
-                }
+                if (((CheckBox) b).isChecked()) mBC.discoverable(true);
+                else  mBC.discoverable(false);
+                break;
         }
     }
 
-    public void onDeviceFound(String name) {} // Callback not needed
-    public void onReceiveMessage(JSONObject msg)
+    public void onPlayerConnected(int pos)
     {
-        // For DEBUG purposes just display an alert saying that we got a message
-        final JSONObject finalMsg = msg;
-        if (msg != null){
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-                    alertDialog.setTitle("DEBUG");
-                    alertDialog.setMessage("Got a message !! Receiver at pos: "
-                            + Integer.toString(mMF.getSender(finalMsg)) + " Message type: " +
-                            mMF.getType(finalMsg));
-                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.dismiss();
-                                }
-                            });
-                    alertDialog.show();
-                }
-            });
+        // TODO: Show dialog which asks user first if he want to participate
 
-        } else Log.d(LOGTAG, "Message was null");
+        // Connected to leader (he sent an invite message) -> directly go to frozen setup screen
+        Intent i0 = new Intent(this, SetupActivity.class);
+        i0.putExtra(SetupActivity.ACTIVE,false);
+        i0.putExtra(SetupActivity.INVITER_POS,pos);
+        startActivity(i0);
     }
+
+    // Callbacks not needed
+    public void onDeviceFound(String name,String address) {Log.d(LOGTAG, "Unused callback called");}
+    public void onStartConnecting() {Log.d(LOGTAG, "Unused callback called");}
+    public void onReceiveMessage(final Message msg) {Log.d(LOGTAG,"Unused callback called");}
+    public void onScanDone() {Log.d(LOGTAG,"Unused callback called");}
+    public void onNotDiscoverable() {Log.d(LOGTAG,"Unused callback called");}
 }

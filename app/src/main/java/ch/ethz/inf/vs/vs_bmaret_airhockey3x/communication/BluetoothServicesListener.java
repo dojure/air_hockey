@@ -11,6 +11,6 @@ import android.bluetooth.BluetoothDevice;
  */
 public interface BluetoothServicesListener {
 
-    void onReceiveBytes(byte[] bytes, int noBytes);
-    void onConnected(BluetoothDevice device);
+    void onReceiveBytes(byte[] bytes, int noBytes); // Pass on bytes that were received
+    void onConnected(String deviceAddr);            // Connected to device with given address
 }

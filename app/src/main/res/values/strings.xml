@@ -8,6 +8,8 @@
     <string name="app_display_name">AirHockey 3X</string>
     <string name="title_activity_setup">SetupActivity</string>
 
+    <string name="discoverable">Discoverable</string>
+
     <string name="pl_holder_no_participants">This is only a placeholder dialog. The user can later
         select here how many players that want to participate. There will be displayed as many
         buttons as this number. For the time being the default is three.</string>

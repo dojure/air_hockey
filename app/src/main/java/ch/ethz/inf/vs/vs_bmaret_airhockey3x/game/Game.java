@@ -2,7 +2,10 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.game;
 
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,7 +22,6 @@ public class Game {
     private final String LOGTAG = "Game";
 
     private static Game ourInstance = new Game();
-
     public static Game getInstance() {
         return ourInstance;
     }
@@ -31,6 +33,7 @@ public class Game {
     private Game() {}
 
     public void setNrPlayer(int nr) {mNrPlayer = nr;}
+    public int getNrPlayer() {return mNrPlayer;}
 
     /**
      * Add player p ad position position
@@ -44,7 +47,6 @@ public class Game {
     {
         if (p != null) mPlayers.put(p.getPosition(),p);
         else Log.d(LOGTAG,"Attempted to add null player");
-
     }
 
     /**
@@ -54,8 +56,28 @@ public class Game {
      */
     public Player getPlayer(int position)
     {
-        // TODO: Check if position is valid (consistent wuth mPlayerNr)
+        // TODO: Check if position is valid (consistent with mPlayerNr)
         if (position > 3 && position < 0) return null;
         return mPlayers.get(position);
+    }
+
+    public List<Player> getAllPlayers()
+    {
+        Collection<Player> players = mPlayers.values();
+        List<Player> playerList = new ArrayList<>(players);
+        return playerList;
+    }
+
+    /**
+     * The game is ready iff all players are ready
+     * @return      Ready state of game
+     */
+    public boolean ready()
+    {
+        boolean ready = true;
+        for (Player p : mPlayers.values()) {
+            if (!p.isReady()) ready = false;
+        }
+        return ready;
     }
 }
