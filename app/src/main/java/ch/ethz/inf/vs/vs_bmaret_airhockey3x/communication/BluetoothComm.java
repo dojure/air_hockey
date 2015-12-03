@@ -21,6 +21,17 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.RemoteInviteMe
  * This is the only class that gets called from outside the package. It provides all necessary
  * services to the communication layer clients.
  *
+ * This class is a Singleton. That way we can easyily keep the connections and other communication
+ * related state during all the activities.
+ *
+ * TODO s (in addition the others already in the code)
+ * 1. Think about the cleanup. When to call .stop() and what must be done?
+ * 2. Could change the names (for the list) to only the name of the device rather than the name and
+ *      the address
+ * 3. Test pairing from within the application. For some devices it works and for some not.. Maybe
+ *      some hidden Bluetooth preferences that i'm not aware of. In the worst case we can still pair
+ *      all devices BEFORE we start the app. Also sometimes when the 'other two' are not paired yet,
+ *      they might not connect
  */
 public class BluetoothComm implements BluetoothServicesListener {
 
@@ -33,13 +44,43 @@ public class BluetoothComm implements BluetoothServicesListener {
     private BluetoothServices mBS;
     private int mNoConnections = -1; // Nr of connections that we must support
 
-    private Boolean mScanning = false;
-
-    /** List of paired and discovered devices*/
-    private List<BluetoothDevice> mDevices = new ArrayList<>();
-    /** Player that is currently selected*/
-    //private Player mCurrentPlayer = null;
+    private List<BluetoothDevice> mDevices = new ArrayList<>(); // Devices from scan or already paired
     private int mCurrentPlayerPos = -1;
+
+    // Callback for BluetoothAdapter
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            String action = intent.getAction();
+            switch (action) {
+                case BluetoothDevice.ACTION_FOUND:
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    Log.d(LOGTAG,"Found device " + device.getName());
+                    // If it's already paired, skip it, because it's been listed already
+                    if (device != null && device.getBondState() != BluetoothDevice.BOND_BONDED && !mDevices.contains(device)) {
+
+                        // Consider only mDevices with nonnull name??
+                        if (device.getName() != null) {
+                            mDevices.add(device);
+                            String name = device.getName();
+                            String address = device.getAddress();
+                            mListener.onDeviceFound(name, address);
+                        }
+                    }
+                    break;
+                case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+                    Log.d(LOGTAG,"Scanning done");
+                    mListener.onScanDone();
+                    break;
+                case BluetoothAdapter.ACTION_SCAN_MODE_CHANGED:
+                    if (mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+                        mListener.onNotDiscoverable();
+                    }
+                    break;
+            }
+        }
+    };
 
 
     private static BluetoothComm ourInstance = new BluetoothComm();
@@ -50,7 +91,6 @@ public class BluetoothComm implements BluetoothServicesListener {
         mContext = appContext;
         mListener = listener;
 
-        //mMF = new MessageFactory();
         mBS = new BluetoothServices(this);
 
         // Get Bluetooth adapter
@@ -63,52 +103,59 @@ public class BluetoothComm implements BluetoothServicesListener {
             Log.d(LOGTAG,"Bluetooth not enabled or not supported");
 
             // TODO: Exit gracefully if Bluetooth is not supported
-
             // TODO: If Bluetooth is just not enabled, prompt a dialog to enable it
+
             //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-
-            // TODO: If the mEnable is still false, exit gracefully
         }
 
-
-        // The pairing stuff used to be here before it was a singleton
-
-
+        // Register bluetooth callback
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
         mContext.registerReceiver(receiver, filter);
     }
 
+    /**
+     * Register BluetoothCommListener; Note we allow only for one listener
+     * @param listener  Listener
+     */
     public void registerListener(BluetoothCommListener listener)
     {
         if(listener != null) mListener = listener;
         else Log.d(LOGTAG,"Tried to register null-listener");
     }
 
-    // Let client unregister - 'this' is not needed anymore -> do cleanup
+    /**
+     * Unregister BluetoothCommListener.
+     * @param listener  Listener
+     */
     public void unregisterListener(BluetoothCommListener listener)
     {
-        //mBS.unregisterListener(this); // Not needed anymore because singleton??
         if (mListener == listener) { // Must be same mListener of course
             mListener = null;
-
-            // TODO: Not working? get all devices found twice in LOG?
-            mContext.unregisterReceiver(receiver);
         }
     }
 
+    /**
+     * This class needs to know about the number of players in order to be able to broadcast messages.
+     * @param noConnections     Number of players
+     */
     public void setNoConnections(int noConnections) {mNoConnections = noConnections;}
 
+    /**
+     * Get the names of all the devices that are already paired.
+     * @return  List of all names and addresses (In one entry) of devices that are already paired
+     */
     public List<String> getPairedDeviceNamesAdresses()
     {
         List<String> result = new ArrayList<>();
         // Add already paired mDevice
-        // TODO: maybe do more intelligently
         for (BluetoothDevice d : mBluetoothAdapter.getBondedDevices()) {
             Log.d(LOGTAG, "Device already paired: " + d.getName());
 
-            // TODO: Should we only consider mDevices with nonnull name??
+            // We take only devices with nonnull name (OK ?)
             if (d != null && d.getName() != null) {
                 mDevices.add(d);
                 String name = d.getName();
@@ -119,6 +166,69 @@ public class BluetoothComm implements BluetoothServicesListener {
         return result;
     }
 
+    /**
+     * Start or stop scan for devices
+     * @param enable    Wheter to start ot stop the scan
+     */
+    public void scan(boolean enable)
+    {
+        if(mBluetoothAdapter != null) {
+            if (enable && !mBluetoothAdapter.isDiscovering()) {
+                Log.d(LOGTAG,"Scanning..");
+                mBluetoothAdapter.startDiscovery();
+            }
+            else if (!enable && mBluetoothAdapter.isDiscovering()) {
+                Log.d(LOGTAG,"Stop scanning");
+                mBluetoothAdapter.cancelDiscovery();
+            }
+        } else Log.d(LOGTAG,"Cannot scan - bluetoothAdapter was null");
+    }
+
+    /**
+     * Stop BluetoothServices
+     */
+    public void stop()
+    {
+        // TODO: Cleanup when done -> maybe something about the bluetooth callback
+        // Also figure out a good place to call this
+        mBS.stop();
+    }
+
+
+    /**
+     * Listen for incoming connections
+     * @param enable    Either listen or disconnect (??)
+     */
+    public void listen(Boolean enable)
+    {
+        // TODO: Rethink the what to do when enable is false
+        Log.d(LOGTAG, "Enable listening: " + Boolean.toString(enable));
+        if (enable) mBS.listen();
+        //else mBS.stop();
+    }
+
+    /**
+     * Make device discoverable such that other bluetooth devices can find it via discovery, or cancel
+     * the visibility. Note that the user gets asked in both cases to allow the action.
+     * @param enable    Wheter to let it be discoverable or not
+     */
+    public void discoverable(boolean enable)
+    {
+        Log.d(LOGTAG, "Make discoverable " + Boolean.toString(enable));
+        if(enable && mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            listen(false); // Stop listening if were listening
+            Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            i.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            mContext.startActivity(i);
+            listen(true); // Start again
+        } else if (!enable && mBluetoothAdapter.getScanMode() == BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            i.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 1); // Hacky but ok
+            mContext.startActivity(i);
+        }
+    }
     /**
      * Invite a player (device) to the game.
      * Set the device of mCurrentPlayer to the invited device
@@ -142,66 +252,29 @@ public class BluetoothComm implements BluetoothServicesListener {
                     mListener.onStartConnecting();
                 }
             }
-
-        } else {
-            Log.d(LOGTAG,"Tried to get paired device for null-Player");
-        }
+        } else Log.d(LOGTAG, "Tried to get paired device for null-Player");
     }
 
+    /**
+     * Tell a player that he should connect to an other player
+     * @param p1    The player who gets told
+     * @param p2    The player to whom p1 should connect
+     */
     public void remoteInvite(int p1, int p2)
     {
-        // Tell p1 to connect to p2
+        // We tell p1 the address of p2; the chance is great that p1 doesnt know p2 yet
         String addressP2 = mBS.getAddressForPoisition(p2);
-        //JSONObject msg = mMF.createMessage(MessageFactory.INVITE_REMOTE_MSG,
-        //        0, mMF.remoteInviteMessageBody(p2.getPosition(),addressP2));
         Message msg = new RemoteInviteMessage(p1,p2,addressP2);
-        mBS.send(p1,msg.toBytes());
+        mBS.send(p1, msg.toBytes());
     }
 
     /**
-     * Stop BluetoothServices - Also stops listening
-     */
-    public void disconnect() {
-        mBS.stop();
-    }
-
-
-    /**
-     * Listen for incoming connections
-     * @param enable    Either listen or disconnect
-     */
-    public void listen(Boolean enable) {
-        Log.d(LOGTAG, "Enable listening: " + Boolean.toString(enable));
-        if (enable)
-            mBS.listen();
-        else
-            mBS.stop();
-    }
-
-    /**
-     * Make the device discoverable. This must be done if the two devices are not paired yet
-     */
-    public void discoverable()
-    {
-        Log.d(LOGTAG, "Make discoverable");
-        if(mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-            listen(false); // Stop listening if were listening
-            Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            i.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-            mContext.startActivity(i);
-            listen(true); // Start again
-        }
-    }
-
-    /**
-     * Sends a message to a specific player
+     * Sends a message (Receiver specified in message)
      * @param msg       msg to be sent
      */
     public void sendMessage(Message msg)
     {
         if (msg != null) {
-
             if (msg.getReceiver() == Message.BROADCAST) {
                 Log.d(LOGTAG,"Broadcasting message");
 
@@ -228,51 +301,10 @@ public class BluetoothComm implements BluetoothServicesListener {
                 }
             }
             else {
-                Log.d(LOGTAG,"Sending message to receiver at pos " + msg.getReceiver());
+                Log.d(LOGTAG,"Sending message " + msg.getType() + " to receiver at pos " + msg.getReceiver());
                 mBS.send(msg.getReceiver(), msg.toBytes());
             }
-
-
         } else Log.d(LOGTAG,"There is a problem sending a message to a receiver");
-    }
-
-    // Listener to device scan
-    private final BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent)
-        {
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                Log.d(LOGTAG,"Found device " + device.getName());
-                // If it's already paired, skip it, because it's been listed already
-                if (device != null && device.getBondState() != BluetoothDevice.BOND_BONDED && !mDevices.contains(device)) {
-
-                    // Consider only mDevices with nonnull name??
-                    if (device.getName() != null) {
-                        mDevices.add(device);
-                        String name = device.getName();
-                        String address = device.getAddress();
-                        mListener.onDeviceFound(name, address);
-                    }
-                }
-            } else if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                // Scan done
-                mScanning = false;
-            }
-        }
-    };
-
-    /**
-     *  Scan for remote devices
-     */
-    public void scan()
-    {
-        // TODO: Listener only gets new devices. Somehow callback him with already paired devices
-        if(!mScanning) {
-            mScanning = true;
-            mBluetoothAdapter.startDiscovery();
-        }
     }
 
     /**
@@ -281,9 +313,15 @@ public class BluetoothComm implements BluetoothServicesListener {
      *
      */
 
+    /**
+     * Handle incoming messages (messages firs in byte form)
+     * Note that the message Object gets also passed to the BluetoothCommListener -> Not all messages
+     * must be handled here. Only messages that do not need to concern the listener.
+     * @param bytes     Message as bytes
+     * @param noBytes   Number of bytes
+     */
     public void onReceiveBytes(byte[] bytes, int noBytes)
     {
-        //JSONObject msg = MessageFactory.bytesToMsg(bytes, noBytes);
         Message msg = new Message(bytes, noBytes);
         String msgType = msg.getType();
         Log.d(LOGTAG,"Receiving message " + msgType);
@@ -291,10 +329,6 @@ public class BluetoothComm implements BluetoothServicesListener {
 
         switch (msgType) {
             case Message.INVITE_MSG:
-                InviteMessage mInv = new InviteMessage(msg);
-                /*int assignedPos = mInv.getAssignedPos();
-                //int senderPos = mInv.getSenderPos();
-                int relPos = 4-assignedPos;*/
                 mBS.setPosForLastConnectedDevice(msg.getSender());
                 mListener.onPlayerConnected(msg.getSender());
                 mCurrentPlayerPos = -1; // Not sure if needed bcz we are dealing at the moment with the sender
@@ -305,7 +339,6 @@ public class BluetoothComm implements BluetoothServicesListener {
                 String deviceAddress = mRem.getAddress();
                 Log.d(LOGTAG, "Got remote invite messgae with abspos " + Integer.toString(absPos) +
                         " and address " + deviceAddress);
-                // TODO: General case this works only for 3
                 mCurrentPlayerPos = 4-absPos;
                 mBS.setPosForAddress(mCurrentPlayerPos, deviceAddress);
                 mBS.connect(deviceAddress, mCurrentPlayerPos);
@@ -316,12 +349,15 @@ public class BluetoothComm implements BluetoothServicesListener {
         }
     }
 
+    /**
+     * Device with given address was connected.
+     * @param deviceAddr    Address of connected device
+     */
     public void onConnected(String deviceAddr)
     {
         Log.d(LOGTAG, "Connected to " + deviceAddr);
         if (mCurrentPlayerPos != -1) {
-            //mCurrentPlayer.setBDevice(deviceAddr);
-            mListener.onPlayerConnected(mCurrentPlayerPos);
+            mListener.onPlayerConnected(mCurrentPlayerPos); // Notify listener
             mCurrentPlayerPos = -1;
         } else Log.d(LOGTAG,"mCurrenPlayer was -1!");
 

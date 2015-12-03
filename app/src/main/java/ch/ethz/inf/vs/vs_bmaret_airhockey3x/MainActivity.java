@@ -1,35 +1,24 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.MessageFactory;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, BluetoothCommListener {
 
     private final static String LOGTAG = "MainActivity";
 
     private BluetoothComm mBC;
-    //private MessageFactory mMF = new MessageFactory();
 
 
     @Override
@@ -48,7 +37,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mBC = BluetoothComm.getInstance();
         mBC.init(this, getApplicationContext()); // Must only be done once in entire app
-        //mBC = new BluetoothComm(this, getApplicationContext());
         mBC.listen(true); // Start listening for incoming connections
     }
 
@@ -75,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         super.onDestroy();
         mBC.unregisterListener(this);
+        mBC.discoverable(false);
     }
 
     @Override
@@ -99,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (b.getId()) {
             case R.id.play_btn:
                 Intent i0 = new Intent(this, SetupActivity.class);
-                i0.putExtra("active",true); // Store key somewhere intelligent
+                i0.putExtra(SetupActivity.ACTIVE,true);
                 startActivity(i0);
                 break;
             case R.id.settings_btn:
@@ -108,25 +97,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.join_check_box:
                 // We need to make ourselves discoverable if we are not paired yet
-                if (((CheckBox) b).isChecked()) {
-                    mBC.discoverable();
-                } else {
-                    // TODO: Cancel discoverability
-                    // TODO: This might be impossible
-                }
+                if (((CheckBox) b).isChecked()) mBC.discoverable(true);
+                else  mBC.discoverable(false);
+                break;
         }
     }
 
-    public void onDeviceFound(String name,String address) {Log.d(LOGTAG,"Unused callback called");} // Callback not needed
-    public void onStartConnecting() {Log.d(LOGTAG,"Unused callback called");}
     public void onPlayerConnected(int pos)
     {
         // TODO: Show dialog which asks user first if he want to participate
+
+        // Connected to leader (he sent an invite message) -> directly go to frozen setup screen
         Intent i0 = new Intent(this, SetupActivity.class);
-        i0.putExtra("active",false); // Store key somewhere intelligent
-        i0.putExtra("pos_inviter",pos);
+        i0.putExtra(SetupActivity.ACTIVE,false);
+        i0.putExtra(SetupActivity.INVITER_POS,pos);
         startActivity(i0);
     }
 
-    public void onReceiveMessage(final Message msg) {}
+    // Callbacks not needed
+    public void onDeviceFound(String name,String address) {Log.d(LOGTAG, "Unused callback called");}
+    public void onStartConnecting() {Log.d(LOGTAG, "Unused callback called");}
+    public void onReceiveMessage(final Message msg) {Log.d(LOGTAG,"Unused callback called");}
+    public void onScanDone() {Log.d(LOGTAG,"Unused callback called");}
+    public void onNotDiscoverable() {Log.d(LOGTAG,"Unused callback called");}
 }

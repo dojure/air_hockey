@@ -6,6 +6,8 @@ import org.json.JSONObject;
 /**
  * Created by Valentin on 03/12/15.
  *
+ * Use to invite someone into the game. The other player can deduce where the inviter is positioned
+ * by this message.
  * No special functionality in here; Consider making one class for all classes that have no special
  * functionality.
  */
@@ -14,7 +16,6 @@ public class InviteMessage extends Message {
 
     public InviteMessage(int receiverPos)
     {
-        //super(Message.INVITE_MSG, senderId);
         super(receiverPos, Message.INVITE_MSG);
 
         try {
@@ -32,8 +33,6 @@ public class InviteMessage extends Message {
             mBody = new JSONObject();
             mBody = mMsg.getJSONObject(BODY_KEY);
         } catch (JSONException e) {e.printStackTrace();}
-
     }
-
 
 }

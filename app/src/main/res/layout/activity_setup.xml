@@ -24,10 +24,33 @@
 
         <ListView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="184dp"
             android:id="@+id/devices_list"
             android:layout_gravity="bottom"
             android:choiceMode="singleChoice"/>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <Button
+                android:layout_width="203dp"
+                android:layout_height="match_parent"
+                android:text="scan"
+                android:id="@+id/scan_button"
+                android:enabled="false" />
+
+            <ProgressBar
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/progress_scan"
+                android:indeterminate="true"
+                android:paddingTop="20dp"
+                android:paddingLeft="15dp" />
+
+        </LinearLayout>
     </LinearLayout>
 
 

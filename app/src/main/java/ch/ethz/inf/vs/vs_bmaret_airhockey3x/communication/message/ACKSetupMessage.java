@@ -5,6 +5,8 @@ import org.json.JSONObject;
 
 /**
  * Created by Valentin on 03/12/15.
+ *
+ * Use this class to acknowledge actions during the setup phase.
  */
 public class ACKSetupMessage extends Message {
 
@@ -18,7 +20,6 @@ public class ACKSetupMessage extends Message {
 
     public ACKSetupMessage(int receiverPos, int ackCode)
     {
-        //super(Message.ACK_SETUP_MSG, senderId);
         super(receiverPos,Message.ACK_SETUP_MSG);
 
         mAckCode = ackCode;
@@ -31,18 +32,7 @@ public class ACKSetupMessage extends Message {
             e.printStackTrace();
         }
     }
-/*
-    public ACKSetupMessage(byte[] bytes, int noBytes)
-    {
-        super(bytes, noBytes);
 
-        try {
-            mBody = new JSONObject();
-            mBody = mMsg.getJSONObject(BODY_KEY);
-            mAckCode = mBody.getInt(ACK_CODE_KEY);
-        } catch (JSONException e) {e.printStackTrace();}
-    }
-*/
     public ACKSetupMessage(Message msg)
     {
         super(msg);
@@ -55,6 +45,5 @@ public class ACKSetupMessage extends Message {
     }
 
     public int getAckCode() {return mAckCode;}
-
 
 }

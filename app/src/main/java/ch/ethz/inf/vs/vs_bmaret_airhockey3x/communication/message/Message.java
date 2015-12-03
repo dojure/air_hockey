@@ -7,6 +7,10 @@ import java.io.UnsupportedEncodingException;
 
 /**
  * Created by Valentin on 03/12/15.
+ *
+ * Subclass from this class. To have specialized messages for your purpose.
+ * Provides Header; Body must be provided by subclass.
+ * Define your type in here.
  */
 public class Message {
 
@@ -26,10 +30,9 @@ public class Message {
     protected final static String RECEIVER_KEY = "receiver";
     protected final static String TYPE_KEY = "type";
 
-
     protected JSONObject mMsg;
     protected JSONObject mHeader;
-    protected JSONObject mBody; // Let subclass set
+    protected JSONObject mBody; // Let subclass must set
     protected String mType;
 
     /**
@@ -46,7 +49,6 @@ public class Message {
         mType = type;
         mReceiver = receiver;
         mSender = 4 - receiver;
-        //mSender = senderId;
 
         try {
             mMsg = new JSONObject();
@@ -58,9 +60,14 @@ public class Message {
         } catch (JSONException e) {e.printStackTrace();}
     }
 
+    /**
+     * Get message object from bytes, e.g. when receiving a message.
+     * @param bytes     Received bytes
+     * @param noBytes   Number of received bytes
+     */
     public Message(byte[] bytes, int noBytes)
     {
-        // TODO: Error handling
+        // TODO: Check input
         try {
             if (bytes != null && bytes.length != 0) {
                 String tmp = new String(bytes, 0, noBytes, "UTF-8");
@@ -76,9 +83,10 @@ public class Message {
         catch (UnsupportedEncodingException e) {e.printStackTrace();}
     }
 
+    // Used in subclasses, when they want "cast" a Message Object to their specific type
     protected Message(Message msg)
     {
-        // TODO: Error handling
+        // TODO: Check input
         try {
             mMsg = msg.toJSON();
             mHeader = mMsg.getJSONObject(HEADER_KEY);
@@ -100,12 +108,20 @@ public class Message {
     public int getSender() {return mSender;}
     public String getType() {return mType;}
 
+    /**
+     * Get bytes for sending.
+     * @return  Bytes ready to send
+     */
     public byte[] toBytes()
     {
         if (mMsg != null) return mMsg.toString().getBytes();
         else return null;
     }
 
+    /**
+     * Get the underlying JSON representation.
+     * @return  JSON representation
+     */
     public JSONObject toJSON() {return mMsg;}
 
 }

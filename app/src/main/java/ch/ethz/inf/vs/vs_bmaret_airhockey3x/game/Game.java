@@ -22,7 +22,6 @@ public class Game {
     private final String LOGTAG = "Game";
 
     private static Game ourInstance = new Game();
-
     public static Game getInstance() {
         return ourInstance;
     }
@@ -68,8 +67,6 @@ public class Game {
         List<Player> playerList = new ArrayList<>(players);
         return playerList;
     }
-
-
 
     /**
      * The game is ready iff all players are ready
