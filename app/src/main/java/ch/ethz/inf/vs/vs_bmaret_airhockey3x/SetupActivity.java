@@ -127,10 +127,12 @@ public class SetupActivity extends AppCompatActivity
                         String entry = (String) parent.getItemAtPosition(position);
                         if (mCurrentPlayer != null) {
                             // Invite other player
-                            scan(false); // Stop scan to makre it faster
+                            scan(false); // Stop scan to make it faster
                             mBC.invite(mCurrentPlayer.getPosition(), entry);
                         } else Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
+
                     }
+
                 });
 
         initGame(3);
@@ -141,7 +143,8 @@ public class SetupActivity extends AppCompatActivity
         if (mActive) scan(true); // Scan only if leader
         else scan(false);
 
-        addPairedDevicesToList();
+        //addPairedDevicesToList();
+
         setEnableListView(false);
 
         if (!mActive) {
@@ -217,12 +220,15 @@ public class SetupActivity extends AppCompatActivity
                 } else b.setSelected(false);
                 break;
             case R.id.scan_button:
-                if (mActive) scan(true);
+                if (mActive){
+                    scan(true);
+                }
                 else {
                     mBC.discoverable(true);
                     b.setEnabled(false);
                 }
                 break;
+
 
             // DEBUG
             case R.id.test_msg_btn1:
@@ -275,11 +281,14 @@ public class SetupActivity extends AppCompatActivity
             // First call -> initialize Listadapter
             List<String> entries = new ArrayList<>();
             String entry = name + " " + address;
+            Log.d(LOGTAG,"initialize Listadapter and clear entries");
+            entries.clear();
             entries.add(entry);
             mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
             mDevicesListView.setAdapter(mAdapter);
         } else {
             // Use Listadapter which is already initialized
+            Log.d(LOGTAG,"add entry to list adapter");
             String entry = name + " " + address;
             mAdapter.add(entry);
             mAdapter.notifyDataSetChanged();
@@ -465,22 +474,31 @@ public class SetupActivity extends AppCompatActivity
     /**
      * Populate list with paired devices
      */
-    private void addPairedDevicesToList()
-    {
-        List<String> entries = mBC.getPairedDeviceNamesAdresses();
-        if (mAdapter == null) {
-            // First call -> initialize Listadapter
-            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
-            mDevicesListView.setAdapter(mAdapter);
-        } else {
-            // Use Listadapter which is already initialized
-            for (String entry : entries) {
-                mAdapter.add(entry);
-
-            }
-            mAdapter.notifyDataSetChanged();
-        }
-    }
+//    private void addPairedDevicesToList()
+//    {
+//        List<String> entries = mBC.getPairedDeviceNamesAdresses();
+//        if (mAdapter == null) {
+//            // First call -> initialize Listadapter
+//            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
+//            mDevicesListView.setAdapter(mAdapter);
+//        } else {
+//            // Use Listadapter which is already initialized
+//            for (String entry : entries) {
+//                mAdapter.add(entry);
+//
+//            }
+//            mAdapter.notifyDataSetChanged();
+//        }
+//    }
+//
+//    //test method
+//    private void updateList(){
+//        List<String> entries = mBC.getPairedDeviceNamesAdresses();
+//        for(String entry : entries){
+//            mAdapter.add(entry);
+//        }
+//        mAdapter.notifyDataSetChanged();
+//    }
 
     // TODO: Shows dialog where user can decide how many players want to participate
     private void showDialog()
@@ -545,8 +563,15 @@ public class SetupActivity extends AppCompatActivity
             p.setVisibility(View.GONE);
             b.setEnabled(true);
         }
-        mBC.scan(enable);
 
+        // clear device list before start a new scan
+        if(mAdapter != null && enable){
+            Log.d(LOGTAG, "clear device list");
+            mAdapter.clear();
+        }
+
+
+        mBC.scan(enable);
     }
 
     /**

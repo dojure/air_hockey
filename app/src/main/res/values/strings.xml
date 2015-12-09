@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">VS_bmaret_AirHockey3X</string>
 
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_settings">SettingsActivity</string>
 
@@ -13,5 +12,9 @@
     <string name="pl_holder_no_participants">This is only a placeholder dialog. The user can later
         select here how many players that want to participate. There will be displayed as many
         buttons as this number. For the time being the default is three.</string>
+
+    <string name="device_name">Device name: </string>
+    <string name="save">SAVE</string>
+    <string name="update">UPDATE</string>
 
 </resources>

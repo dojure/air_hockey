@@ -27,7 +27,8 @@
             android:layout_height="184dp"
             android:id="@+id/devices_list"
             android:layout_gravity="bottom"
-            android:choiceMode="singleChoice"/>
+            android:choiceMode="singleChoice"
+            android:listSelector="@android:color/darker_gray"/>
 
         <LinearLayout
             android:orientation="horizontal"

@@ -58,7 +58,7 @@ public class BluetoothComm implements BluetoothServicesListener {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     Log.d(LOGTAG,"Found device " + device.getName());
                     // If it's already paired, skip it, because it's been listed already
-                    if (device != null && device.getBondState() != BluetoothDevice.BOND_BONDED && !mDevices.contains(device)) {
+                    if (device != null ) {  //&& !mDevices.contains(device) && device.getBondState() != BluetoothDevice.BOND_BONDED  (commented out)
 
                         // Consider only mDevices with nonnull name??
                         if (device.getName() != null) {
@@ -109,6 +109,9 @@ public class BluetoothComm implements BluetoothServicesListener {
             //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
 
+//        //test clear devices
+//        mDevices.clear();
+
         // Register bluetooth callback
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
@@ -148,23 +151,23 @@ public class BluetoothComm implements BluetoothServicesListener {
      * Get the names of all the devices that are already paired.
      * @return  List of all names and addresses (In one entry) of devices that are already paired
      */
-    public List<String> getPairedDeviceNamesAdresses()
-    {
-        List<String> result = new ArrayList<>();
-        // Add already paired mDevice
-        for (BluetoothDevice d : mBluetoothAdapter.getBondedDevices()) {
-            Log.d(LOGTAG, "Device already paired: " + d.getName());
-
-            // We take only devices with nonnull name (OK ?)
-            if (d != null && d.getName() != null) {
-                mDevices.add(d);
-                String name = d.getName();
-                String address = d.getAddress();
-                result.add(name + " " + address);
-            }
-        }
-        return result;
-    }
+//    public List<String> getPairedDeviceNamesAdresses()
+//    {
+//        List<String> result = new ArrayList<>();
+//        // Add already paired mDevice
+//        for (BluetoothDevice d : mBluetoothAdapter.getBondedDevices()) {
+//            Log.d(LOGTAG, "Device already paired: " + d.getName());
+//
+//            // We take only devices with nonnull name (OK ?)
+//            if (d != null && d.getName() != null) {
+//                mDevices.add(d);
+//                String name = d.getName();
+//                String address = d.getAddress();
+//                result.add(name + " " + address);
+//            }
+//        }
+//        return result;
+//    }
 
     /**
      * Start or stop scan for devices
@@ -361,5 +364,18 @@ public class BluetoothComm implements BluetoothServicesListener {
             mCurrentPlayerPos = -1;
         } else Log.d(LOGTAG,"mCurrenPlayer was -1!");
 
+    }
+
+    /**
+     * change device name to simplify setup for the user
+     * @param name  new device name
+     */
+    public void changeDeviceName(String name){
+        mBluetoothAdapter.setName(name);
+    }
+
+    //may not needed anymore....
+    public void clearDeviceList(){
+        mDevices.clear();
     }
 }

@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.settings_btn:
                 Intent i1 = new Intent(this, SettingsActivity.class);
+                // send mBC with serializable interface? or using bluetooth adapter separately...
                 startActivity(i1);
                 break;
             case R.id.join_check_box:
@@ -113,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         i0.putExtra(SetupActivity.INVITER_POS,pos);
         startActivity(i0);
     }
+
 
     // Callbacks not needed
     public void onDeviceFound(String name,String address) {Log.d(LOGTAG, "Unused callback called");}
