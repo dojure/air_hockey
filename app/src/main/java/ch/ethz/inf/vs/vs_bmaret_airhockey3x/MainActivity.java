@@ -1,5 +1,7 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -22,8 +24,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -37,12 +38,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mBC = BluetoothComm.getInstance();
         mBC.init(this, getApplicationContext()); // Must only be done once in entire app
+        mBC.registerListener(this);
         mBC.listen(true); // Start listening for incoming connections
     }
 
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         super.onResume();
 
         // Make buttons appear next to each other when in landscape -> Important if we start off with
@@ -52,23 +53,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
             // landscape
             linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-        } else if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
+        } else if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             //  portrait
             linearLayout.setOrientation(LinearLayout.VERTICAL);
         }
     }
 
     @Override
-    protected void onDestroy()
-    {
+    protected void onDestroy() {
         super.onDestroy();
         mBC.unregisterListener(this);
         mBC.discoverable(false);
     }
 
     @Override
-    public void onConfigurationChanged(Configuration conf)
-    {
+    public void onConfigurationChanged(Configuration conf) {
         super.onConfigurationChanged(conf);
 
         // Make buttons appear next to each other when in landscape
@@ -77,18 +76,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (conf.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             // landscape
             linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-        } else if (conf.orientation == Configuration.ORIENTATION_PORTRAIT){
+        } else if (conf.orientation == Configuration.ORIENTATION_PORTRAIT) {
             //  portrait
             linearLayout.setOrientation(LinearLayout.VERTICAL);
         }
     }
 
-    public void onClick(View b)
-    {
+    public void onClick(View b) {
         switch (b.getId()) {
             case R.id.play_btn:
-                Intent i0 = new Intent(this, SetupActivity.class);
-                i0.putExtra(SetupActivity.ACTIVE,true);
+                Intent i0 = new Intent(this, SetupActivityLeader.class);
+                //i0.putExtra(SetupActivity.ACTIVE,true);
                 startActivity(i0);
                 break;
             case R.id.settings_btn:
@@ -99,27 +97,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.join_check_box:
                 // We need to make ourselves discoverable if we are not paired yet
                 if (((CheckBox) b).isChecked()) mBC.discoverable(true);
-                else  mBC.discoverable(false);
+                else mBC.discoverable(false);
                 break;
         }
     }
 
-    public void onPlayerConnected(int pos)
-    {
+    public void onPlayerConnected(int pos) {
         // TODO: Show dialog which asks user first if he want to participate
 
         // Connected to leader (he sent an invite message) -> directly go to frozen setup screen
-        Intent i0 = new Intent(this, SetupActivity.class);
-        i0.putExtra(SetupActivity.ACTIVE,false);
-        i0.putExtra(SetupActivity.INVITER_POS,pos);
+        Intent i0 = new Intent(this, SetupActivityFrozen.class);
+        //i0.putExtra(SetupActivity.ACTIVE,false);
+        i0.putExtra(SetupActivityFrozen.INVITER_POS, pos);
         startActivity(i0);
     }
 
+    public void onPlayerDisconnected(int pos) {
+        final int position = pos;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                alertDialog.setTitle(R.string.connection_lost_title);
+                String errorMsg = getString(R.string.connection_lost_message1) + " player "
+                        + Integer.toString(position) + getString(R.string.connection_lost_message2);
+                alertDialog.setMessage(errorMsg);
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
+            }
+        });
+    }
 
     // Callbacks not needed
-    public void onDeviceFound(String name,String address) {Log.d(LOGTAG, "Unused callback called");}
-    public void onStartConnecting() {Log.d(LOGTAG, "Unused callback called");}
-    public void onReceiveMessage(final Message msg) {Log.d(LOGTAG,"Unused callback called");}
-    public void onScanDone() {Log.d(LOGTAG,"Unused callback called");}
-    public void onNotDiscoverable() {Log.d(LOGTAG,"Unused callback called");}
+    public void onDeviceFound(String name, String address) {Log.d(LOGTAG, "Unused callback called - onDeviceFound");}
+    public void onStartConnecting() {Log.d(LOGTAG, "Unused callback called - onStartConnecting");}
+    public void onReceiveMessage(final Message msg) {Log.d(LOGTAG, "Unused callback called - onReceiveMessage");}
+    public void onScanDone() {Log.d(LOGTAG, "Unused callback called - onScanDone");}
+    public void onNotDiscoverable() {Log.d(LOGTAG, "Unused callback called - onNotDiscoverable");}
 }
+

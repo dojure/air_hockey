@@ -14,6 +14,7 @@ public interface BluetoothCommListener {
     void onDeviceFound(String name,String address); // Found new device
     void onReceiveMessage(Message msg);     // Received Message msg
     void onPlayerConnected(int pos);        // Player at pos is now connected
+    void onPlayerDisconnected(int pos);     // Player at pos is now disconnected
     void onStartConnecting();               // As soon as start connecting
     void onScanDone();                      // When bluetooth discovery is done
     void onNotDiscoverable();               // When discoverability expired
