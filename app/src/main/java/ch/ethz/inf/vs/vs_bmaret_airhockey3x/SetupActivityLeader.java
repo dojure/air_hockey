@@ -137,7 +137,7 @@ public class SetupActivityLeader extends AppCompatActivity
     {
         super.onDestroy();
         Log.d(LOGTAG, "onDestroy");
-        mBC.stop();
+        //mBC.stop();
         mBC.unregisterListener(this);
         scan(false);
 
