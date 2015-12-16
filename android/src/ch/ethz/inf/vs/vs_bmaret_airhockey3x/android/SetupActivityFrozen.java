@@ -97,11 +97,17 @@ public class SetupActivityFrozen extends AppCompatActivity
         b = (Button) findViewById(R.id.discover_btn);
         b.setOnClickListener(this);
 
+
         initGame(3);
 
         mBC = BluetoothComm.getInstance();
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
+
+        if (mBC.isDiscoverable()) {
+            b.setEnabled(false);
+        }
+
 
         TextView ownName = (TextView)findViewById(R.id.player0_name);
         ownName.setText(mBC.getDeviceName());
@@ -291,25 +297,7 @@ public class SetupActivityFrozen extends AppCompatActivity
     {
         final int position = pos;
         mGame.getPlayer(pos).setConnected(false);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityFrozen.this).create();
-                alertDialog.setTitle(R.string.connection_lost_title);
-                String errorMsg = getString(R.string.connection_lost_message1) + " player "
-                        + Integer.toString(position) + getString(R.string.connection_lost_message2);
-                alertDialog.setMessage(errorMsg);
-                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                Intent i0 = new Intent(SetupActivityFrozen.this,MainActivity.class);
-                                startActivity(i0);
-                                dialog.dismiss();
-                            }
-                        });
-                alertDialog.show();
-            }
-        });
+
 
         ImageButton button = null;
         TextView nameField = null;
@@ -329,8 +317,32 @@ public class SetupActivityFrozen extends AppCompatActivity
                 break;
         }
 
-        button.setImageResource(R.drawable.vacant_selector);
-        nameField.setText("");
+        final ImageButton b = button;
+        final TextView nameF = nameField;
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityFrozen.this).create();
+                alertDialog.setTitle(R.string.connection_lost_title);
+                String errorMsg = getString(R.string.connection_lost_message1) + " player "
+                        + Integer.toString(position) + getString(R.string.connection_lost_message3);
+                alertDialog.setMessage(errorMsg);
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                Intent i0 = new Intent(SetupActivityFrozen.this, MainActivity.class);
+                                startActivity(i0);
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
+                try {
+                    b.setImageResource(R.drawable.vacant_selector);
+                    nameF.setText("");
+                } catch (NullPointerException e) {e.printStackTrace();}
+            }
+        });
     }
 
     /**

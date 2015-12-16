@@ -234,12 +234,23 @@ public class BluetoothComm implements BluetoothServicesListener {
             mContext.startActivity(i);
             listen(true); // Start again
         } else if (!enable && mBluetoothAdapter.getScanMode() == BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+
+            // We just leave it discoverable
+            /*
             Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             i.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 1); // Hacky but ok
             mContext.startActivity(i);
+            */
         }
     }
+
+    public boolean isDiscoverable()
+    {
+        return mBluetoothAdapter.getScanMode() == BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE;
+    }
+
+
     /**
      * Invite a player (device) to the game.
      * Set the device of mCurrentPlayer to the invited device
@@ -256,8 +267,9 @@ public class BluetoothComm implements BluetoothServicesListener {
             // It should not be possible that a device occupies 2 seats in the game
 
             for (BluetoothDevice d : mDevices) {
-                String compare = d.getName() + " " + d.getAddress();
-                if (compare.equals(entry)) {
+                //String compare = d.getName() + " " + d.getAddress();
+                //if (compare.equals(entry)) {
+                if (d.getName().equals(entry)) {
                     // Open a connection to the device at the specific player
                     mBS.connect(d.getAddress(), mCurrentPlayerPos);
                     mListener.onStartConnecting();

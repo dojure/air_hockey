@@ -375,7 +375,7 @@ public class BluetoothServices {
             BluetoothSocket socket = null;
 
             // Just try UUIDs one after another until one works
-            for (int i = 0; i < 10*mUUIDs.length && socket == null; i++){
+            for (int i = 0; i < 2*mUUIDs.length && socket == null; i++){
                 UUID uuid = mUUIDs[i % mUUIDs.length];
                 if (uuid != null) Log.d(LOGTAG, "Try connecting with uuid " + uuid.toString());
                 else Log.d(LOGTAG,"Somehow uuid was null while trying to connect");
@@ -418,13 +418,14 @@ public class BluetoothServices {
     {
         BluetoothSocket myBSock;
         try {
+            deivce.getUuids();
             myBSock = deivce.createRfcommSocketToServiceRecord(uuidToTry);
             myBSock.connect();
             return myBSock;
         } catch (IOException e) {
             Log.d(LOGTAG, "IOException in getConnectedSocket - uuid probably already in use");
         } catch (NullPointerException e) {
-            Log.d(LOGTAG, "NullpointerException - uuid probably already in use");
+            Log.d(LOGTAG, "NullpointerException in getConnectedSocket - uuid probably already in use");
         }
         return null;
     }

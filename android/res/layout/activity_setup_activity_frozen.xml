@@ -77,20 +77,18 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="player1"
             android:id="@+id/player1_name"
             android:textSize="20sp"
             android:gravity="end"
-            android:layout_below="@+id/player2_name"
-            android:layout_alignEnd="@+id/test_msg_btn1" />
+            android:layout_alignBottom="@+id/player2_btn"
+            android:layout_toStartOf="@+id/player2_btn" />
 
         <TextView
             android:layout_width="120dp"
             android:layout_height="wrap_content"
-            android:text="player3"
             android:id="@+id/player3_name"
             android:textSize="20sp"
-            android:layout_below="@+id/player2_name"
+            android:layout_alignBottom="@+id/player2_btn"
             android:layout_toEndOf="@+id/player2_btn" />
 
         <CheckBox
@@ -148,12 +146,11 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Own Name"
             android:id="@+id/player0_name"
             android:textSize="20sp"
             android:gravity="center|right"
-            android:layout_below="@+id/player0_btn"
-            android:layout_centerHorizontal="true" />
+            android:layout_alignBottom="@+id/player0_btn"
+            android:layout_toEndOf="@+id/player0_btn" />
 
     </RelativeLayout>
 

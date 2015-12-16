@@ -251,17 +251,19 @@ public class SetupActivityLeader extends AppCompatActivity
         if (mAdapter == null) {
             // First call -> initialize Listadapter
             List<String> entries = new ArrayList<>();
-            String entry = name + " " + address;
+            //String entry = name + " " + address;
             Log.d(LOGTAG,"initialize Listadapter and clear entries");
             entries.clear();
-            entries.add(entry);
+            //entries.add(entry);
+            entries.add(name);
             mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
             mDevicesListView.setAdapter(mAdapter);
         } else {
             // Use Listadapter which is already initialized
             Log.d(LOGTAG,"add entry to list adapter");
-            String entry = name + " " + address;
-            mAdapter.add(entry);
+            //String entry = name + " " + address;
+            //mAdapter.add(entry);
+            mAdapter.add(name);
             mAdapter.notifyDataSetChanged();
         }
     }
@@ -364,23 +366,12 @@ public class SetupActivityLeader extends AppCompatActivity
     {
         final int position = pos;
         mGame.getPlayer(pos).setConnected(false);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityLeader.this).create();
-                alertDialog.setTitle(R.string.connection_lost_title);
-                String errorMsg = getString(R.string.connection_lost_message1) + " player "
-                        + Integer.toString(position) + getString(R.string.connection_lost_message2);
-                alertDialog.setMessage(errorMsg);
-                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        });
-                alertDialog.show();
-            }
-        });
+
+
+        // TODO: Think about this
+        mReadyCounter = Math.max(0,mReadyCounter -1);
+        mSetupAllConnectedAcksReceived = Math.max(0,mSetupAllConnectedAcksReceived -1);
+        mSetupEnteredACKReceived = Math.max(0,mSetupEnteredACKReceived -1);
 
         ImageButton button = null;
         TextView nameField = null;
@@ -400,8 +391,33 @@ public class SetupActivityLeader extends AppCompatActivity
                 break;
         }
 
-        button.setImageResource(R.drawable.vacant_selector);
-        nameField.setText("");
+        final ImageButton b = button;
+        final TextView nameF = nameField;
+
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityLeader.this).create();
+                alertDialog.setTitle(R.string.connection_lost_title);
+                String errorMsg = getString(R.string.connection_lost_message1) + " player "
+                        + Integer.toString(position) + getString(R.string.connection_lost_message2);
+                alertDialog.setMessage(errorMsg);
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
+
+                try {
+                    b.setImageResource(R.drawable.vacant_selector);
+                    nameF.setText("");
+                } catch (NullPointerException e) {e.printStackTrace();}
+            }
+        });
+
 
     }
 

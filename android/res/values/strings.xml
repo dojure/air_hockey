@@ -5,7 +5,7 @@
     <string name="title_activity_settings">SettingsActivity</string>
 
     <string name="app_display_name">AirHockey 3X</string>
-    <string name="title_activity_setup">SetupActivity</string>
+    <string name="title_activity_setup">Setup</string>
 
     <string name="discoverable">Discoverable</string>
 
@@ -26,8 +26,9 @@
     <!-- Connection lost -->
     <string name="connection_lost_title">Connection lost</string>
     <string name="connection_lost_message1">The connection to </string>
-    <string name="connection_lost_message2"> was lost. Pleas try again.</string>
+    <string name="connection_lost_message2"> was lost. Please try again.</string>
+    <string name="connection_lost_message3"> was lost. Wait for a new invitation or create a game.</string>
     <string name="invitation_title">Invitation</string>
-    <string name="invitation_txt"> wants to invite?</string>
+    <string name="invitation_txt"> wants to invite you to a game. Do you want to join?</string>
 
 </resources>
