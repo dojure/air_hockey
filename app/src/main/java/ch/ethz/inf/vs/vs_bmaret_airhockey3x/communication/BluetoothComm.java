@@ -387,6 +387,10 @@ public class BluetoothComm implements BluetoothServicesListener {
         mBluetoothAdapter.setName(name);
     }
 
+    public String getDeviceName(){
+        return mBluetoothAdapter.getName();
+    }
+
     //may not needed anymore....
     public void clearDeviceList(){
         mDevices.clear();

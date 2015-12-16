@@ -101,17 +101,17 @@
             android:src="@android:color/holo_green_light" />
 
         <TextView
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Own Name"
             android:id="@+id/player0_name"
             android:textSize="20sp"
             android:gravity="center|right"
-            android:layout_alignBottom="@+id/player0_btn"
-            android:layout_toStartOf="@+id/player0_btn" />
+            android:layout_alignTop="@+id/ready_ckbox"
+            android:layout_toEndOf="@+id/player1_name" />
 
         <TextView
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="player2"
             android:id="@+id/player2_name"
@@ -122,22 +122,22 @@
             android:visibility="invisible" />
 
         <TextView
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="player1"
             android:id="@+id/player1_name"
             android:textSize="20sp"
             android:gravity="end"
-            android:layout_alignBottom="@+id/player2_btn"
-            android:layout_alignEnd="@+id/player1_btn" />
+            android:layout_below="@+id/player2_name"
+            android:layout_alignStart="@+id/player1_btn" />
 
         <TextView
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="player3"
             android:id="@+id/player3_name"
             android:textSize="20sp"
-            android:layout_alignBottom="@+id/player2_btn"
+            android:layout_below="@+id/player2_name"
             android:layout_toEndOf="@+id/player2_btn" />
 
         <CheckBox
@@ -154,24 +154,24 @@
 
         <Button
             style="?android:attr/buttonStyleSmall"
-            android:layout_width="50dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TP1"
             android:id="@+id/test_msg_btn1"
             android:layout_alignParentTop="true"
             android:textSize="10sp"
-            android:layout_alignParentStart="true"
-            android:layout_toStartOf="@+id/player2_btn" />
+            android:layout_alignEnd="@+id/player1_name"
+            android:layout_alignStart="@+id/player1_btn" />
 
         <Button
             style="?android:attr/buttonStyleSmall"
-            android:layout_width="50dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TP3"
             android:id="@+id/test_msg_btn3"
             android:textSize="10sp"
             android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
+            android:layout_alignEnd="@+id/player3_btn"
             android:layout_toEndOf="@+id/player2_btn" />
 
         <ProgressBar

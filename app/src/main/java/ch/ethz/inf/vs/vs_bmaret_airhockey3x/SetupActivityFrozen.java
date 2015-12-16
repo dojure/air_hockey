@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import java.util.List;
 
@@ -97,6 +98,9 @@ public class SetupActivityFrozen extends AppCompatActivity
         mBC = BluetoothComm.getInstance();
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
+
+        TextView ownName = (TextView)findViewById(R.id.player0_name);
+        ownName.setText(mBC.getDeviceName());
 
         mInviter = getIntent().getIntExtra(INVITER_POS,-1);
         mGame.getPlayer(mInviter).setConnected(true);

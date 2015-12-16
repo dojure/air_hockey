@@ -9,39 +9,11 @@
     android:weightSum="1">
 
 
-    <LinearLayout
-        android:layout_width="267dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/frozen_setup_txt"
-            android:textColor="#000000"
-            android:textSize="20sp"
-            android:text="Please wait.." />
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <Button
-                android:layout_width="203dp"
-                android:layout_height="wrap_content"
-                android:id="@+id/discover_btn"
-                android:text="DISCOVERABLE"
-                android:layout_gravity="bottom"
-                android:enabled="false"/>
-
-
-        </LinearLayout>
-    </LinearLayout>
 
 
     <RelativeLayout
-        android:layout_width="313dp"
+        android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <ImageButton
@@ -51,9 +23,9 @@
             android:background="@null"
             android:clickable="false"
             android:scaleType="centerCrop"
+            android:src="@drawable/vacant_selector"
             android:layout_centerVertical="true"
-            android:layout_toStartOf="@+id/player2_btn"
-            android:src="@drawable/vacant_selector"/>
+            android:layout_toStartOf="@+id/player2_btn" />
 
         <ImageButton
             android:layout_width="75dp"
@@ -62,9 +34,9 @@
             android:background="@null"
             android:clickable="false"
             android:scaleType="centerCrop"
+            android:src="@drawable/vacant_selector"
             android:layout_below="@+id/player2_btn"
-            android:layout_toEndOf="@+id/player2_btn"
-            android:src="@drawable/vacant_selector" />
+            android:layout_toEndOf="@+id/player2_btn" />
 
         <ImageButton
             android:layout_width="75dp"
@@ -89,18 +61,10 @@
             android:layout_toStartOf="@+id/player3_btn"
             android:src="@android:color/holo_green_light" />
 
-        <TextView
-            android:layout_width="120dp"
-            android:layout_height="wrap_content"
-            android:text="Own Name"
-            android:id="@+id/player0_name"
-            android:textSize="20sp"
-            android:gravity="center|right"
-            android:layout_alignBottom="@+id/player0_btn"
-            android:layout_toStartOf="@+id/player0_btn" />
+
 
         <TextView
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="player2"
             android:id="@+id/player2_name"
@@ -111,14 +75,14 @@
             android:visibility="invisible" />
 
         <TextView
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="player1"
             android:id="@+id/player1_name"
             android:textSize="20sp"
             android:gravity="end"
-            android:layout_alignBottom="@+id/player2_btn"
-            android:layout_alignEnd="@+id/player1_btn" />
+            android:layout_below="@+id/player2_name"
+            android:layout_alignEnd="@+id/test_msg_btn1" />
 
         <TextView
             android:layout_width="120dp"
@@ -126,7 +90,7 @@
             android:text="player3"
             android:id="@+id/player3_name"
             android:textSize="20sp"
-            android:layout_alignBottom="@+id/player2_btn"
+            android:layout_below="@+id/player2_name"
             android:layout_toEndOf="@+id/player2_btn" />
 
         <CheckBox
@@ -142,25 +106,33 @@
             android:enabled="false" />
 
         <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/discoverable"
+            android:id="@+id/discover_btn"
+            android:layout_alignBottom="@+id/player0_name"
+            android:layout_toEndOf="@+id/progressBar" />
+
+        <Button
             style="?android:attr/buttonStyleSmall"
-            android:layout_width="50dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TP1"
             android:id="@+id/test_msg_btn1"
             android:layout_alignParentTop="true"
             android:textSize="10sp"
-            android:layout_alignParentStart="true"
-            android:layout_toStartOf="@+id/player2_btn" />
+            android:layout_alignStart="@+id/player1_btn"
+            android:layout_alignEnd="@+id/player1_btn" />
 
         <Button
             style="?android:attr/buttonStyleSmall"
-            android:layout_width="50dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TP3"
             android:id="@+id/test_msg_btn3"
             android:textSize="10sp"
             android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
+            android:layout_alignEnd="@+id/player3_btn"
             android:layout_toEndOf="@+id/player2_btn" />
 
         <ProgressBar
@@ -173,5 +145,16 @@
             android:visibility="gone"
             android:indeterminate="true" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Own Name"
+            android:id="@+id/player0_name"
+            android:textSize="20sp"
+            android:gravity="center|right"
+            android:layout_below="@+id/player0_btn"
+            android:layout_centerHorizontal="true" />
+
     </RelativeLayout>
+
 </LinearLayout>

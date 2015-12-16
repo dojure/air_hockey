@@ -13,6 +13,7 @@ import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -124,6 +125,11 @@ public class SetupActivityLeader extends AppCompatActivity
         mBC = BluetoothComm.getInstance();
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
+
+        //TODO: this is for onResume()
+        TextView ownName = (TextView)findViewById(R.id.player0_name);
+        ownName.setText(mBC.getDeviceName());
+
         scan(true); // Scan only if leader
 
         //addPairedDevicesToList();
