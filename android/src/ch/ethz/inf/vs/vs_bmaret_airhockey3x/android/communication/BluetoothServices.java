@@ -173,7 +173,7 @@ public class BluetoothServices {
      * @param t             Thread to add
      * @param deviceAddr    Associated device address
      */
-    private void addNewTransmissionThread(TransmissionThread t, String deviceAddr)
+    private synchronized void addNewTransmissionThread(TransmissionThread t, String deviceAddr)
     {
         mTransmissionThreadMap.put(deviceAddr, t);
         Log.d(LOGTAG,"Check on mTransmissionThreadMap after put() " + Integer.toString(mTransmissionThreadMap.size()));
@@ -196,7 +196,7 @@ public class BluetoothServices {
      * @param pos         receiver position
      * @param bytes       Bytes to send
      */
-    public void send(int pos, byte[] bytes)
+    public synchronized void send(int pos, byte[] bytes)
     {
         Log.d(LOGTAG, "Sending bytes");
         String deviceAddress = mPositionToAddressMap.get(new Integer(pos)); // Get address
@@ -274,7 +274,7 @@ public class BluetoothServices {
      * or he disables bluetooth etc.
      * Handle them properly. We probably need to inform the listener too
      */
-    private void connectionFailed(String address)
+    private synchronized void connectionFailed(String address)
     {
         Log.d(LOGTAG, "Connection failed for address " + address);
 

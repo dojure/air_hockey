@@ -298,7 +298,6 @@ public class SetupActivityFrozen extends AppCompatActivity
         final int position = pos;
         mGame.getPlayer(pos).setConnected(false);
 
-
         ImageButton button = null;
         TextView nameField = null;
 
@@ -331,9 +330,11 @@ public class SetupActivityFrozen extends AppCompatActivity
                 alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                Intent i0 = new Intent(SetupActivityFrozen.this, MainActivity.class);
-                                startActivity(i0);
-                                dialog.dismiss();
+                                if (position == mInviter) {
+                                    Intent i0 = new Intent(SetupActivityFrozen.this, MainActivity.class);
+                                    startActivity(i0);
+                                    dialog.dismiss();
+                                }
                             }
                         });
                 alertDialog.show();
