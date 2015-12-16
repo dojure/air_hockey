@@ -4,18 +4,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Created by Valentin on 03/12/15.
- *
- * Use to invite someone into the game. The other player can deduce where the inviter is positioned
- * by this message.
- * No special functionality in here; Consider making one class for all classes that have no special
- * functionality.
+ * Created by Valentin on 16/12/15.
  */
-public class InviteMessage extends Message {
+public class ReadyMessage extends Message {
 
-    public InviteMessage(int receiverPos)
+    public ReadyMessage(int receiverPos)
     {
-        super(receiverPos, Message.INVITE_MSG);
+        super(receiverPos, Message.READY_MSG);
 
         try {
             mBody = new JSONObject();
@@ -25,7 +20,7 @@ public class InviteMessage extends Message {
         }
     }
 
-    public InviteMessage(Message msg)
+    public ReadyMessage(ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Message msg)
     {
         super(msg);
         try {
@@ -33,5 +28,4 @@ public class InviteMessage extends Message {
             mBody = mMsg.getJSONObject(BODY_KEY);
         } catch (JSONException e) {e.printStackTrace();}
     }
-
 }

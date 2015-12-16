@@ -2,6 +2,7 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -23,6 +24,7 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothCommL
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ACKSetupMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.InviteMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Message;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ReadyMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.TestMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Game;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
@@ -72,6 +74,7 @@ public class SetupActivityLeader extends AppCompatActivity
     private Player mCurrentPlayer = null;
     private int mSetupEnteredACKReceived = 0;
     private int mSetupAllConnectedAcksReceived = 0;
+    private int mReadyCounter = 0;
 
 
     @Override
@@ -201,7 +204,11 @@ public class SetupActivityLeader extends AppCompatActivity
             case R.id.scan_button:
                     scan(true);
                 break;
-
+            case R.id.ready_ckbox:
+                incrementReadyCounter();
+                ReadyMessage msg = new ReadyMessage(Message.BROADCAST);
+                mBC.sendMessage(msg);
+                break;
 
             // DEBUG
             case R.id.test_msg_btn1:
@@ -356,6 +363,7 @@ public class SetupActivityLeader extends AppCompatActivity
     public void onPlayerDisconnected(int pos)
     {
         final int position = pos;
+        mGame.getPlayer(pos).setConnected(false);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -386,7 +394,7 @@ public class SetupActivityLeader extends AppCompatActivity
             return;
         }
         String msgType = msg.getType();
-        Log.d(LOGTAG,"Received message with type " + msgType);
+        Log.d(LOGTAG, "Received message with type " + msgType);
         switch (msgType) {
             case Message.TEST_MSG:
                 showMessage(msg);
@@ -394,6 +402,9 @@ public class SetupActivityLeader extends AppCompatActivity
             case Message.ACK_SETUP_MSG:
                 ACKSetupMessage ack = new ACKSetupMessage(msg);
                 handleAckMessage(ack);
+                break;
+            case Message.READY_MSG:
+                incrementReadyCounter();
                 break;
             case Message.INVITE_MSG:
             case Message.INVITE_REMOTE_MSG:
@@ -410,6 +421,15 @@ public class SetupActivityLeader extends AppCompatActivity
      *
      */
 
+    private void incrementReadyCounter()
+    {
+        mReadyCounter++;
+        if (mReadyCounter == 3) { // TODO: Change for more players
+            Intent i2 = new Intent(this, AndroidLauncher.class);
+            startActivity(i2);
+        }
+    }
+
     /**
      * Handle incoming ACKSetupMessage
      * @param ack   Received message
@@ -417,13 +437,15 @@ public class SetupActivityLeader extends AppCompatActivity
     private void handleAckMessage(ACKSetupMessage ack)
     {
         if (ack.getAckCode() == ACKSetupMessage.ENTERED_SETUP_ACTIVITY) {
+            Log.d(LOGTAG,"Received ENTERED_SETUP_ACTIVITY ack from player " + ack.getSender());
             mSetupEnteredACKReceived++;
             if (mSetupEnteredACKReceived == mGame.getNrPlayer()-1) {
                 Log.d(LOGTAG,"All other players have entered the setup screen -> start remote inviting");
                 mBC.remoteInvite(1,3); // TODO: Make general this is only for three players
             }
         } else if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
-            mSetupEnteredACKReceived++;
+            Log.d(LOGTAG,"Received ALL_CONNECTED ack from player " + ack.getSender());
+            mSetupAllConnectedAcksReceived++;
             if (mSetupAllConnectedAcksReceived == mGame.getNrPlayer()-1) {
                 Log.d(LOGTAG,"All other players have all their connections ready");
                 // Broadcast ALL_CONNECTED s.t. the others can also makre their ready checkbox visible
