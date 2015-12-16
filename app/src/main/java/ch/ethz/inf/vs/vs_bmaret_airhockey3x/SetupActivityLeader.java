@@ -143,11 +143,20 @@ public class SetupActivityLeader extends AppCompatActivity
     {
         super.onDestroy();
         Log.d(LOGTAG, "onDestroy");
-        //mBC.stop();
+        mBC.stop();
         mBC.unregisterListener(this);
         scan(false);
 
         // TODO: More cleanup ?
+    }
+
+
+    @Override
+    public boolean onNavigateUp()
+    {
+        Log.d(LOGTAG, "onNavigateUo()");
+        mBC.stop();
+        return super.onNavigateUp();
     }
 
     /**
@@ -283,7 +292,7 @@ public class SetupActivityLeader extends AppCompatActivity
      * Player is connected. Invite him into game
      * @param pos   Position where the other player is located
      */
-    public void onPlayerConnected(int pos)
+    public void onPlayerConnected(int pos, final String name)
     {
         // Let progressbar disappear
         runOnUiThread(new Runnable() {
@@ -297,23 +306,28 @@ public class SetupActivityLeader extends AppCompatActivity
         // Send invite message to connected player (if mActive)
         mGame.getPlayer(pos).setConnected(true);
         ImageButton b = null;
+        TextView nameField = null;
         Message msg = new InviteMessage(pos);
         mBC.sendMessage(msg);
         switch (pos) {
             case 1:
                 b = (ImageButton) findViewById(R.id.player1_btn);
+                nameField = (TextView) findViewById(R.id.player1_name);
                 break;
             case 2:
                 b = (ImageButton) findViewById(R.id.player2_btn);
+                nameField = (TextView) findViewById(R.id.player2_name);
                 break;
             case 3:
                 b = (ImageButton) findViewById(R.id.player3_btn);
+                nameField = (TextView) findViewById(R.id.player3_name);
                 break;
         }
 
-        // Change button color
-        if (b!= null) {
+        // Change button color and add name
+        if (b!= null && nameField != null) {
             final ImageButton button = b;
+            final TextView nameF = nameField;
             try {
                 runOnUiThread(new Runnable() {
                     @Override
@@ -321,6 +335,7 @@ public class SetupActivityLeader extends AppCompatActivity
                         Log.d(LOGTAG, "Changing background of button...");
                         button.setImageResource(R.drawable.occupied_selector);
                         button.setSelected(false);
+                        nameF.setText(name);
                     }
                 });
             } catch (NullPointerException e) {e.printStackTrace();}

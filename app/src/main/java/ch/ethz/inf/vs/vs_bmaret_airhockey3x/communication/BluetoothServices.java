@@ -42,6 +42,7 @@ public class BluetoothServices {
     private HashMap<String,BluetoothSocket> mSocketsMap;    // Map addresses to its sockets
     private HashMap<String,TransmissionThread> mTransmissionThreadMap; // Map addr to the thread handling the connection to there
     private HashMap<String,List<Byte[]>> mPendingMessages;  // Store pending messages if connection doesn't exist yet
+    private HashMap<String,String> mAddtressToNameMap;
 
     public BluetoothServices(BluetoothServicesListener listener)
     {
@@ -50,6 +51,7 @@ public class BluetoothServices {
 
         mSocketsMap = new HashMap<>();
         mDeviceAddresses = new ArrayList<>();
+        mAddtressToNameMap = new HashMap<>();
         mTransmissionThreadMap = new HashMap<>();
         mPositionToAddressMap = new HashMap<>();
         mPendingMessages = new HashMap<>();
@@ -71,19 +73,27 @@ public class BluetoothServices {
      * has not a position yet
      * @param pos   Position where last connected device belongs to
      */
-    public synchronized void setPosForLastConnectedDevice(int pos)
+    public synchronized String setPosForLastConnectedDevice(int pos)
     {
         // TODO: Some sanity check would be good.
 
         // Assuming only the last is not matched
         boolean found = false;
+        String address = null;
         for (String addr : mDeviceAddresses) {
             if(!mPositionToAddressMap.containsValue(addr)) {
                 mPositionToAddressMap.put(new Integer(pos),addr);
+                address = addr;
                 found = true;
             }
         }
-        if (!found) Log.d(LOGTAG,"Didnt find new address, which had to be associated with its position");
+        String name = mAddtressToNameMap.get(address);
+        if (!found) {
+            Log.d(LOGTAG,"Didnt find new address, which had to be associated with its position");
+            return null;
+        } else if (name != null) return name;
+        else Log.d(LOGTAG, "No name was to be found for address");
+        return null;
     }
 
     /**
@@ -146,7 +156,11 @@ public class BluetoothServices {
     {
         Log.d(LOGTAG, "Connected - start transmitting");
 
-        mListener.onConnected(deviceAddr);
+        String name = mAddtressToNameMap.get(deviceAddr);
+        if (name == null) Log.d(LOGTAG, "There exists no name for address " + deviceAddr);
+        else {
+            mListener.onConnected(deviceAddr, name);
+        }
 
         TransmissionThread t = new TransmissionThread(mSocketsMap.get(deviceAddr), deviceAddr);
         t.start();
@@ -236,6 +250,7 @@ public class BluetoothServices {
         mTransmissionThreadMap.clear();
         mPositionToAddressMap.clear();
         mDeviceAddresses.clear();
+        mAddtressToNameMap.clear();
     }
 
     /**
@@ -285,6 +300,7 @@ public class BluetoothServices {
         mDeviceAddresses.remove(address);
         mPendingMessages.remove(address);
         mSocketsMap.remove(address); // Socket is cloesd by t.cancel() above
+        mAddtressToNameMap.remove(address);
     }
 
 
@@ -318,8 +334,11 @@ public class BluetoothServices {
                     // Connection has been made
 
                     String addr = socket.getRemoteDevice().getAddress();
+                    String name = socket.getRemoteDevice().getName();
                     mDeviceAddresses.add(addr);
                     mSocketsMap.put(addr, socket);
+                    if (name != null) mAddtressToNameMap.put(addr, name);
+                    else Log.d(LOGTAG,"Remote name was null");
 
                     transmit(addr);
                 }
@@ -369,6 +388,9 @@ public class BluetoothServices {
 
             if (socket == null) Log.d(LOGTAG,"Tried all UUIDs but couldnt make connection");
             mSocketsMap.put(addr, socket);
+            String name = socket.getRemoteDevice().getName();
+            if (name != null) mAddtressToNameMap.put(addr, name);
+            else Log.d(LOGTAG,"Remote name was null");
             transmit(addr);
         }
 

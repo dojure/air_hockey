@@ -2,6 +2,7 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -59,6 +60,7 @@ public class SetupActivityFrozen extends AppCompatActivity
 
     private final static String LOGTAG = "SetupActivityFrozen";
     public final static String INVITER_POS = "inviter";
+    public final static String INVITER_NAME = "inviter_name";
 
     private Game mGame;
     private int mInviter = -1; // The player which went first into the setup screen (only not -1 if !mActive)
@@ -99,26 +101,37 @@ public class SetupActivityFrozen extends AppCompatActivity
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
 
+<<<<<<< HEAD
         TextView ownName = (TextView)findViewById(R.id.player0_name);
         ownName.setText(mBC.getDeviceName());
 
         mInviter = getIntent().getIntExtra(INVITER_POS,-1);
+=======
+        mInviter = getIntent().getIntExtra(INVITER_POS, -1);
+        String inviterName = getIntent().getStringExtra(INVITER_NAME);
+        if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
+>>>>>>> origin/master
         mGame.getPlayer(mInviter).setConnected(true);
         Message msg = new ACKSetupMessage(mInviter,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
         mBC.sendMessage(msg); // Send ACK
 
         // Change button color of inviter to greem
+        TextView nameField = null;
         switch (mInviter) {
             case 1:
                 b1.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player1_name);
                 break;
             case 2:
                 b2.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player2_name);
                 break;
             case 3:
                 b3.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player3_name);
                 break;
         }
+        nameField.setText(inviterName);
     }
 
 
@@ -208,7 +221,7 @@ public class SetupActivityFrozen extends AppCompatActivity
      * Player is connected. Invite him into game
      * @param pos   Position where the other player is located
      */
-    public void onPlayerConnected(int pos)
+    public void onPlayerConnected(int pos, String name)
     {
         // Let progressbar disappear
         runOnUiThread(new Runnable() {
@@ -268,6 +281,7 @@ public class SetupActivityFrozen extends AppCompatActivity
     public void onPlayerDisconnected(int pos)
     {
         final int position = pos;
+        mGame.getPlayer(pos).setConnected(false);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -279,6 +293,8 @@ public class SetupActivityFrozen extends AppCompatActivity
                 alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
+                                Intent i0 = new Intent(SetupActivityFrozen.this,MainActivity.class);
+                                startActivity(i0);
                                 dialog.dismiss();
                             }
                         });

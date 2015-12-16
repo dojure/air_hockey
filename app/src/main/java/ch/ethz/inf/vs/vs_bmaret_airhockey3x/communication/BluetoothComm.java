@@ -340,8 +340,8 @@ public class BluetoothComm implements BluetoothServicesListener {
 
         switch (msgType) {
             case Message.INVITE_MSG:
-                mBS.setPosForLastConnectedDevice(msg.getSender());
-                mListener.onPlayerConnected(msg.getSender());
+                String name = mBS.setPosForLastConnectedDevice(msg.getSender());
+                mListener.onPlayerConnected(msg.getSender(),name);
                 mCurrentPlayerPos = -1; // Not sure if needed bcz we are dealing at the moment with the sender
                 break;
             case Message.INVITE_REMOTE_MSG:
@@ -364,11 +364,11 @@ public class BluetoothComm implements BluetoothServicesListener {
      * Device with given address was connected.
      * @param deviceAddr    Address of connected device
      */
-    public void onConnected(String deviceAddr)
+    public void onConnected(String deviceAddr, String name)
     {
         Log.d(LOGTAG, "Connected to " + deviceAddr);
         if (mCurrentPlayerPos != -1) {
-            mListener.onPlayerConnected(mCurrentPlayerPos); // Notify listener
+            mListener.onPlayerConnected(mCurrentPlayerPos, name); // Notify listener
             mCurrentPlayerPos = -1;
         } else Log.d(LOGTAG,"mCurrenPlayer was -1!");
 
