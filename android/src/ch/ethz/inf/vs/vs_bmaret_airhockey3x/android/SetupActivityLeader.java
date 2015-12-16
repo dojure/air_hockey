@@ -404,9 +404,6 @@ public class SetupActivityLeader extends AppCompatActivity
 
 
 
-
-
-
     /**
      *
      * Helper functions
