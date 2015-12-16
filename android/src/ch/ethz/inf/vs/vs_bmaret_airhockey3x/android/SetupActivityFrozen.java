@@ -310,6 +310,27 @@ public class SetupActivityFrozen extends AppCompatActivity
                 alertDialog.show();
             }
         });
+
+        ImageButton button = null;
+        TextView nameField = null;
+
+        switch (pos){
+            case 1:
+                button = (ImageButton) findViewById(R.id.player1_btn);
+                nameField = (TextView) findViewById(R.id.player1_name);
+                break;
+            case 2:
+                button = (ImageButton) findViewById(R.id.player2_btn);
+                nameField = (TextView) findViewById(R.id.player2_name);
+                break;
+            case 3:
+                button = (ImageButton) findViewById(R.id.player3_btn);
+                nameField = (TextView) findViewById(R.id.player3_name);
+                break;
+        }
+
+        button.setImageResource(R.drawable.vacant_selector);
+        nameField.setText("");
     }
 
     /**
