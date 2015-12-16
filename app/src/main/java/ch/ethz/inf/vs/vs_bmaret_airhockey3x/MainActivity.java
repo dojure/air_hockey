@@ -102,18 +102,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public void onPlayerConnected(int pos) {
+    public void onPlayerConnected(int pos,String name) {
         // TODO: Show dialog which asks user first if he want to participate
 
         // Connected to leader (he sent an invite message) -> directly go to frozen setup screen
         Intent i0 = new Intent(this, SetupActivityFrozen.class);
         //i0.putExtra(SetupActivity.ACTIVE,false);
         i0.putExtra(SetupActivityFrozen.INVITER_POS, pos);
+        i0.putExtra(SetupActivityFrozen.INVITER_NAME,name);
         startActivity(i0);
     }
 
-    public void onPlayerDisconnected(int pos) {
+    public void onPlayerDisconnected(int pos)
+    {
         final int position = pos;
+        Log.d(LOGTAG,"Connection lost");
+        /*
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -131,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 alertDialog.show();
             }
         });
+        */
     }
 
     // Callbacks not needed

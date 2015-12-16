@@ -21,9 +21,11 @@
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_setup_activity_frozen">Setup</string>
 
+    <string name="no_name">anonymous</string>
+
     <!-- Connection lost -->
     <string name="connection_lost_title">Connection lost</string>
     <string name="connection_lost_message1">The connection to </string>
-    <string name="connection_lost_message2">was lost. Pleasy try again.</string>
+    <string name="connection_lost_message2"> was lost. Pleas try again.</string>
 
 </resources>
