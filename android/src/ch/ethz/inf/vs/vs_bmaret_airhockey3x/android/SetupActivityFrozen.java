@@ -1,31 +1,27 @@
-package ch.ethz.inf.vs.vs_bmaret_airhockey3x;
+package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothComm;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.BluetoothCommListener;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.ACKSetupMessage;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.InviteMessage;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.Message;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.communication.message.TestMessage;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Game;
-import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothComm;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothCommListener;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ACKSetupMessage;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Message;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.TestMessage;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Game;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
 
 /**
  * Created by Valentin on 14/11/15.
@@ -59,26 +55,24 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
  */
 
 
-public class SetupActivityLeader extends AppCompatActivity
+public class SetupActivityFrozen extends AppCompatActivity
         implements View.OnClickListener, BluetoothCommListener {
 
-    private final static String LOGTAG = "SetupActivityLeader";
+    private final static String LOGTAG = "SetupActivityFrozen";
+    public final static String INVITER_POS = "inviter";
+    public final static String INVITER_NAME = "inviter_name";
 
     private Game mGame;
+    private int mInviter = -1; // The player which went first into the setup screen (only not -1 if !mActive)
     private BluetoothComm mBC;
-    private ListView mDevicesListView;
-    private ArrayAdapter<String> mAdapter;
     private ImageButton[] mImageButtons = new ImageButton[3];
-    private Player mCurrentPlayer = null;
-    private int mSetupEnteredACKReceived = 0;
-    private int mSetupAllConnectedAcksReceived = 0;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_setup_activity_leader);
+        setContentView(R.layout.activity_setup_activity_frozen);
 
         ImageButton b1 = (ImageButton) findViewById(R.id.player1_btn);
         mImageButtons[0] = b1;
@@ -98,28 +92,8 @@ public class SetupActivityLeader extends AppCompatActivity
         b.setOnClickListener(this);
         b = (Button) findViewById(R.id.test_msg_btn3);
         b.setOnClickListener(this);
-        b = (Button) findViewById(R.id.scan_button);
+        b = (Button) findViewById(R.id.discover_btn);
         b.setOnClickListener(this);
-
-        // TODO: Ask user how many players -> only when want to do more than 3
-        //showDialog();
-
-        // Initialize the ListView
-        // Callback for clicking on ListView
-        mDevicesListView = (ListView) findViewById(R.id.devices_list);
-        mDevicesListView.setOnItemClickListener(
-                new AdapterView.OnItemClickListener() {
-                    public void onItemClick(AdapterView<?> parent, View arg1, int position, long arg3) {
-                        String entry = (String) parent.getItemAtPosition(position);
-                        if (mCurrentPlayer != null) {
-                            // Invite other player
-                            scan(false); // Stop scan to make it faster
-                            mBC.invite(mCurrentPlayer.getPosition(), entry);
-                        } else Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
-
-                    }
-
-                });
 
         initGame(3);
 
@@ -127,15 +101,33 @@ public class SetupActivityLeader extends AppCompatActivity
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
 
-        //TODO: this is for onResume()
         TextView ownName = (TextView)findViewById(R.id.player0_name);
         ownName.setText(mBC.getDeviceName());
 
-        scan(true); // Scan only if leader
+        mInviter = getIntent().getIntExtra(INVITER_POS, -1);
+        String inviterName = getIntent().getStringExtra(INVITER_NAME);
+        if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
+        mGame.getPlayer(mInviter).setConnected(true);
+        Message msg = new ACKSetupMessage(mInviter,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
+        mBC.sendMessage(msg); // Send ACK
 
-        //addPairedDevicesToList();
-
-        setEnableListView(false);
+        // Change button color of inviter to greem
+        TextView nameField = null;
+        switch (mInviter) {
+            case 1:
+                b1.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player1_name);
+                break;
+            case 2:
+                b2.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player2_name);
+                break;
+            case 3:
+                b3.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player3_name);
+                break;
+        }
+        nameField.setText(inviterName);
     }
 
 
@@ -143,21 +135,10 @@ public class SetupActivityLeader extends AppCompatActivity
     protected void onDestroy()
     {
         super.onDestroy();
-        Log.d(LOGTAG, "onDestroy");
         mBC.stop();
         mBC.unregisterListener(this);
-        scan(false);
 
         // TODO: More cleanup ?
-    }
-
-
-    @Override
-    public boolean onNavigateUp()
-    {
-        Log.d(LOGTAG, "onNavigateUo()");
-        mBC.stop();
-        return super.onNavigateUp();
     }
 
     /**
@@ -172,38 +153,19 @@ public class SetupActivityLeader extends AppCompatActivity
      */
     public void onClick(View b)
     {
-        // Deselect all others
-        for (ImageButton ib : mImageButtons) {
-            if(!b.equals(ib)) ib.setSelected(false);
-        }
         switch (b.getId()) {
             case R.id.player1_btn:
-                if (!b.isSelected()) {
-                    setEnableListView(true); // Now the user can select the the device for this position
-                    b.setSelected(true);
-                    setCurrentPlayer(mGame.getPlayer(1));
-                } else b.setSelected(false);
                 break;
             case R.id.player2_btn:
-                if (!b.isSelected()) {
-                    setEnableListView(true); // Now the user can select the the device for this position
-                    b.setSelected(true);
-                    setCurrentPlayer(mGame.getPlayer(2));
-                } else b.setSelected(false);
                 break;
             case R.id.player3_btn:
-                if (!b.isSelected()) {
-                    setEnableListView(true); // Now the user can select the the device for this position
-                    b.setSelected(true);
-                    setCurrentPlayer(mGame.getPlayer(3));
-                } else b.setSelected(false);
                 break;
-            case R.id.scan_button:
-                    scan(true);
+            case R.id.discover_btn:
+                mBC.discoverable(true);
+                b.setEnabled(false);
                 break;
 
-
-            // DEBUG
+            // DEBUG - Send test messages
             case R.id.test_msg_btn1:
                 Message msg0 = new TestMessage(1);
                 mBC.sendMessage(msg0);
@@ -213,15 +175,6 @@ public class SetupActivityLeader extends AppCompatActivity
                 mBC.sendMessage(msg1);
                 break;
         }
-        // Check if no button is selected -> need to disable list if none is and invalidate current player
-        boolean sel = false;
-        for (ImageButton ib : mImageButtons) {
-            if(ib.isSelected()) sel = true;
-        }
-        if (!sel) {
-            setEnableListView(false);
-            setCurrentPlayer(null);
-        }
     }
 
     /**
@@ -230,50 +183,21 @@ public class SetupActivityLeader extends AppCompatActivity
      *
      */
 
-    public void onNotDiscoverable() {Log.d(LOGTAG, "Unused callback called");}
-
     /**
-     * TODO: Could also only put name into list. This would also imply changes in BluetoothComm
-     *
-     * New device was found -> need to put into list
-     * @param name     Name
-     * @param address   Address
+     * If not discoverable anymore may enable button to make discoverable again
      */
-    public void onDeviceFound(String name, String address)
+    public void onNotDiscoverable()
     {
-        if (mAdapter == null) {
-            // First call -> initialize Listadapter
-            List<String> entries = new ArrayList<>();
-            String entry = name + " " + address;
-            Log.d(LOGTAG,"initialize Listadapter and clear entries");
-            entries.clear();
-            entries.add(entry);
-            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
-            mDevicesListView.setAdapter(mAdapter);
-        } else {
-            // Use Listadapter which is already initialized
-            Log.d(LOGTAG,"add entry to list adapter");
-            String entry = name + " " + address;
-            mAdapter.add(entry);
-            mAdapter.notifyDataSetChanged();
-        }
+        Button b = (Button) findViewById(R.id.discover_btn);
+        b.setEnabled(true);
     }
+
+    public void onDeviceFound(String name, String address) {Log.d(LOGTAG, "Unused callback called");}
 
     /**
      * Scan is done. Adjust button and progress bar.
      */
-    public void onScanDone()
-    {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Button b = (Button) findViewById(R.id.scan_button);
-                b.setEnabled(true);
-                ProgressBar p = (ProgressBar) findViewById(R.id.progress_scan);
-                p.setVisibility(View.GONE);
-            }
-        });
-    }
+    public void onScanDone() {Log.d(LOGTAG, "Unused callback called");}
 
     /**
      * Start connecting. -> Display progress bar
@@ -304,12 +228,9 @@ public class SetupActivityLeader extends AppCompatActivity
             }
         });
 
-        // Send invite message to connected player (if mActive)
         mGame.getPlayer(pos).setConnected(true);
         ImageButton b = null;
         TextView nameField = null;
-        Message msg = new InviteMessage(pos);
-        mBC.sendMessage(msg);
         switch (pos) {
             case 1:
                 b = (ImageButton) findViewById(R.id.player1_btn);
@@ -325,8 +246,8 @@ public class SetupActivityLeader extends AppCompatActivity
                 break;
         }
 
-        // Change button color and add name
-        if (b!= null && nameField != null) {
+        // Change button color
+        if (b!= null) {
             final ImageButton button = b;
             final TextView nameF = nameField;
             try {
@@ -342,7 +263,7 @@ public class SetupActivityLeader extends AppCompatActivity
             } catch (NullPointerException e) {e.printStackTrace();}
         }
 
-        // Check if we are connected to everyone - if so send ack to inviter (Relevant for mActive = false)
+        // Check if we are connected to everyone - if so send ack to inviter
         List<Player> players = mGame.getAllPlayers();
         int connectedPlayers = 1; // We consider ourselves as connected
         for (Player p : players) {
@@ -350,16 +271,23 @@ public class SetupActivityLeader extends AppCompatActivity
         }
         if (connectedPlayers == mGame.getNrPlayer()) {
             Log.d(LOGTAG, "We are connected to all other players.");
+
+            // Could do stuff here
+
+            // Send ACK that all are connected to inviter
+            ACKSetupMessage ack = new ACKSetupMessage(mInviter, ACKSetupMessage.ALL_CONNECTED);
+            mBC.sendMessage(ack);
         }
     }
 
     public void onPlayerDisconnected(int pos)
     {
         final int position = pos;
+        mGame.getPlayer(pos).setConnected(false);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityLeader.this).create();
+                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityFrozen.this).create();
                 alertDialog.setTitle(R.string.connection_lost_title);
                 String errorMsg = getString(R.string.connection_lost_message1) + " player "
                         + Integer.toString(position) + getString(R.string.connection_lost_message2);
@@ -367,6 +295,8 @@ public class SetupActivityLeader extends AppCompatActivity
                 alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
+                                Intent i0 = new Intent(SetupActivityFrozen.this,MainActivity.class);
+                                startActivity(i0);
                                 dialog.dismiss();
                             }
                         });
@@ -419,69 +349,20 @@ public class SetupActivityLeader extends AppCompatActivity
      */
     private void handleAckMessage(ACKSetupMessage ack)
     {
-        if (ack.getAckCode() == ACKSetupMessage.ENTERED_SETUP_ACTIVITY) {
-            mSetupEnteredACKReceived++;
-            if (mSetupEnteredACKReceived == mGame.getNrPlayer()-1) {
-                Log.d(LOGTAG,"All other players have entered the setup screen -> start remote inviting");
-                mBC.remoteInvite(1,3); // TODO: Make general this is only for three players
-            }
-        } else if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
-            mSetupEnteredACKReceived++;
-            if (mSetupAllConnectedAcksReceived == mGame.getNrPlayer()-1) {
-                Log.d(LOGTAG,"All other players have all their connections ready");
-                // Broadcast ALL_CONNECTED s.t. the others can also makre their ready checkbox visible
-                ACKSetupMessage ack1 = new ACKSetupMessage(Message.BROADCAST,ACKSetupMessage.ALL_CONNECTED);
-                mBC.sendMessage(ack1);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        CheckBox cb = (CheckBox) findViewById(R.id.ready_ckbox);
-                        cb.setEnabled(true);
-                    }
-                });
-            }
+        // TODO: Is this alright? Should we handle something in here?
+
+        if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    CheckBox cb = (CheckBox) findViewById(R.id.ready_ckbox);
+                    cb.setEnabled(true);
+                }
+            });
         }
     }
 
-    /**
-     * Populate list with paired devices
-     */
-//    private void addPairedDevicesToList()
-//    {
-//        List<String> entries = mBC.getPairedDeviceNamesAdresses();
-//        if (mAdapter == null) {
-//            // First call -> initialize Listadapter
-//            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
-//            mDevicesListView.setAdapter(mAdapter);
-//        } else {
-//            // Use Listadapter which is already initialized
-//            for (String entry : entries) {
-//                mAdapter.add(entry);
-//
-//            }
-//            mAdapter.notifyDataSetChanged();
-//        }
-//    }
-//
-//    //test method
-//    private void updateList(){
-//        List<String> entries = mBC.getPairedDeviceNamesAdresses();
-//        for(String entry : entries){
-//            mAdapter.add(entry);
-//        }
-//        mAdapter.notifyDataSetChanged();
-//    }
-
-    // TODO: Shows dialog where user can decide how many players want to participate
-    private void showDialog()
-    {
-        AlertDialog.Builder dialog  = new AlertDialog.Builder(this);
-        dialog.setMessage(getString(R.string.pl_holder_no_participants));
-        dialog.setTitle("PLACEHODLER");
-        dialog.setPositiveButton("OK", null);
-        dialog.setCancelable(true);
-        dialog.create().show();
-    }
 
     /**
      * Show given message in a dialog to user
@@ -493,7 +374,7 @@ public class SetupActivityLeader extends AppCompatActivity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityLeader.this).create();
+                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityFrozen.this).create();
                 alertDialog.setTitle("DEBUG");
                 alertDialog.setMessage("Got a message !! Receiver at pos: "
                         + Integer.toString(finalMsg.getSender()) + " Message type: " +
@@ -509,56 +390,6 @@ public class SetupActivityLeader extends AppCompatActivity
         });
     }
 
-    /**
-     * Enables or disables list view. Can only select items if enabled
-     * @param enable    Enable or disable
-     */
-    private void setEnableListView(boolean enable)
-    {
-        mDevicesListView.setEnabled(enable);
-        if (enable) mDevicesListView.setAlpha((float) 1);
-        else mDevicesListView.setAlpha((float) 0.5); // Must do manually
-    }
-
-    /**
-     * Start or stop scan. Also adjsut button and progress bar
-     * @param enable    Start/stop
-     */
-    private void scan(boolean enable)
-    {
-        Button b = (Button)findViewById(R.id.scan_button);
-        ProgressBar p = (ProgressBar) findViewById(R.id.progress_scan);
-        if (enable) {
-            p.setVisibility(View.VISIBLE);
-            b.setEnabled(false);
-        } else {
-            p.setVisibility(View.GONE);
-            b.setEnabled(true);
-        }
-
-        // clear device list before start a new scan
-        if(mAdapter != null && enable){
-            Log.d(LOGTAG, "clear device list");
-            mAdapter.clear();
-        }
-
-
-        mBC.scan(enable);
-    }
-
-    /**
-     * Sets current player. A player is considered 'current' iff the corresponding button is selected
-     * Disconnect devices of all when none is current.
-     * @param p     Current player
-     */
-    private void setCurrentPlayer(Player p)
-    {
-        if (p != null)  Log.d(LOGTAG,"Setting current player: " + Integer.toString(p.getPosition()));
-        else Log.d(LOGTAG, "Set current player to null");
-
-        // TODO: Do we still need special functionality for this
-        mCurrentPlayer = p; // Even if -1
-    }
 
     /**
      * Initializes game with given number of players

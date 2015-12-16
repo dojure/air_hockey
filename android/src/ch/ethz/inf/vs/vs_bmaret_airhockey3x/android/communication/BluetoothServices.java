@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.text.LoginFilter;
 import android.util.Log;
 
 import java.io.IOException;
@@ -41,6 +42,7 @@ public class BluetoothServices {
     private HashMap<String,BluetoothSocket> mSocketsMap;    // Map addresses to its sockets
     private HashMap<String,TransmissionThread> mTransmissionThreadMap; // Map addr to the thread handling the connection to there
     private HashMap<String,List<Byte[]>> mPendingMessages;  // Store pending messages if connection doesn't exist yet
+    private HashMap<String,String> mAddtressToNameMap;
 
     public BluetoothServices(BluetoothServicesListener listener)
     {
@@ -49,6 +51,7 @@ public class BluetoothServices {
 
         mSocketsMap = new HashMap<>();
         mDeviceAddresses = new ArrayList<>();
+        mAddtressToNameMap = new HashMap<>();
         mTransmissionThreadMap = new HashMap<>();
         mPositionToAddressMap = new HashMap<>();
         mPendingMessages = new HashMap<>();
@@ -70,19 +73,27 @@ public class BluetoothServices {
      * has not a position yet
      * @param pos   Position where last connected device belongs to
      */
-    public synchronized void setPosForLastConnectedDevice(int pos)
+    public synchronized String setPosForLastConnectedDevice(int pos)
     {
         // TODO: Some sanity check would be good.
 
         // Assuming only the last is not matched
         boolean found = false;
+        String address = null;
         for (String addr : mDeviceAddresses) {
             if(!mPositionToAddressMap.containsValue(addr)) {
                 mPositionToAddressMap.put(new Integer(pos),addr);
+                address = addr;
                 found = true;
             }
         }
-        if (!found) Log.d(LOGTAG,"Didnt find new address, which had to be associated with its position");
+        String name = mAddtressToNameMap.get(address);
+        if (!found) {
+            Log.d(LOGTAG,"Didnt find new address, which had to be associated with its position");
+            return null;
+        } else if (name != null) return name;
+        else Log.d(LOGTAG, "No name was to be found for address");
+        return null;
     }
 
     /**
@@ -145,9 +156,13 @@ public class BluetoothServices {
     {
         Log.d(LOGTAG, "Connected - start transmitting");
 
-        mListener.onConnected(deviceAddr);
+        String name = mAddtressToNameMap.get(deviceAddr);
+        if (name == null) Log.d(LOGTAG, "There exists no name for address " + deviceAddr);
+        else {
+            mListener.onConnected(deviceAddr, name);
+        }
 
-        TransmissionThread t = new TransmissionThread(mSocketsMap.get(deviceAddr));
+        TransmissionThread t = new TransmissionThread(mSocketsMap.get(deviceAddr), deviceAddr);
         t.start();
         addNewTransmissionThread(t, deviceAddr);
     }
@@ -161,6 +176,7 @@ public class BluetoothServices {
     private void addNewTransmissionThread(TransmissionThread t, String deviceAddr)
     {
         mTransmissionThreadMap.put(deviceAddr, t);
+        Log.d(LOGTAG,"Check on mTransmissionThreadMap after put() " + Integer.toString(mTransmissionThreadMap.size()));
         List<Byte[]> pending = mPendingMessages.get(deviceAddr);
         if (pending != null) {
             for (Byte[] msg : pending) {
@@ -205,9 +221,9 @@ public class BluetoothServices {
     /**
      * Cancel all threads
      */
-    public synchronized void stop()
+    public synchronized void reset()
     {
-        Log.d(LOGTAG,"Disconnect - Stop all threads");
+        Log.d(LOGTAG,"Stop and reset everything");
 
         // TODO: Make sure this gets called somewhere appropriate
 
@@ -216,7 +232,9 @@ public class BluetoothServices {
             mConnectThread.cancel();
             mConnectThread = null;
         }
-        // Cancel all threads doing transmissions
+        // Cancel all threads doing transmissions - closes also all sockets in mSocketsMap
+        // TODO: WHY IS THIS EMPTY ??
+        Log.d(LOGTAG,"Check on mTransmissionThreadMap in reset() " + Boolean.toString(mTransmissionThreadMap.isEmpty()));
         for (TransmissionThread t : mTransmissionThreadMap.values()) {
             if (t != null) t.cancel();
         }
@@ -225,6 +243,14 @@ public class BluetoothServices {
             mListenThread.cancel();
             mListenThread = null;
         }
+
+        // TODO: Maybe a bit harsh?
+        mPendingMessages.clear();
+        mSocketsMap.clear();
+        mTransmissionThreadMap.clear();
+        mPositionToAddressMap.clear();
+        mDeviceAddresses.clear();
+        mAddtressToNameMap.clear();
     }
 
     /**
@@ -248,9 +274,33 @@ public class BluetoothServices {
      * or he disables bluetooth etc.
      * Handle them properly. We probably need to inform the listener too
      */
-    private void connectionFailed()
+    private void connectionFailed(String address)
     {
-        Log.d(LOGTAG, "Connection failed");
+        Log.d(LOGTAG, "Connection failed for address " + address);
+
+        // Reverese search the position
+        int position = -1;
+        for (int p : mPositionToAddressMap.keySet()) {
+            String addr = mPositionToAddressMap.get(p);
+            if (addr != null && addr.equals(address)) {
+                position = p;
+            }
+        }
+
+        if (position >= 0) {
+            mListener.onConnectionLost(position);
+            mPositionToAddressMap.remove(position);
+        } else Log.d(LOGTAG,"No position found for address " + address + " in connectionFailed");
+
+        TransmissionThread t = mTransmissionThreadMap.get(address);
+        if (t != null) {
+            t.cancel();
+            mTransmissionThreadMap.remove(address);
+        }
+        mDeviceAddresses.remove(address);
+        mPendingMessages.remove(address);
+        mSocketsMap.remove(address); // Socket is cloesd by t.cancel() above
+        mAddtressToNameMap.remove(address);
     }
 
 
@@ -284,8 +334,11 @@ public class BluetoothServices {
                     // Connection has been made
 
                     String addr = socket.getRemoteDevice().getAddress();
+                    String name = socket.getRemoteDevice().getName();
                     mDeviceAddresses.add(addr);
                     mSocketsMap.put(addr, socket);
+                    if (name != null) mAddtressToNameMap.put(addr, name);
+                    else Log.d(LOGTAG,"Remote name was null");
 
                     transmit(addr);
                 }
@@ -335,6 +388,9 @@ public class BluetoothServices {
 
             if (socket == null) Log.d(LOGTAG,"Tried all UUIDs but couldnt make connection");
             mSocketsMap.put(addr, socket);
+            String name = socket.getRemoteDevice().getName();
+            if (name != null) mAddtressToNameMap.put(addr, name);
+            else Log.d(LOGTAG,"Remote name was null");
             transmit(addr);
         }
 
@@ -372,15 +428,19 @@ public class BluetoothServices {
 
         private final InputStream mIn;
         private final OutputStream mOut;
+        private final BluetoothSocket mSocket;
+        private final String mAddress;
 
-        public TransmissionThread(BluetoothSocket socket)
+        public TransmissionThread(BluetoothSocket socket, String address)
         {
             // Set in and output stream
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
+            mSocket = socket;
+            mAddress = address;
             try {
-                tmpIn = socket.getInputStream();
-                tmpOut = socket.getOutputStream();
+                tmpIn = mSocket.getInputStream();
+                tmpOut = mSocket.getOutputStream();
             } catch (IOException e) {e.printStackTrace();}
 
             mIn = tmpIn;
@@ -403,6 +463,7 @@ public class BluetoothServices {
                     }
                 } catch (IOException e) {
                     Log.d(LOGTAG, "Connection lost - Start listening again for incoming connections");
+                    connectionFailed(mAddress);
                     listen(); // TODO: yes? no? Call connectionerror?
                     e.printStackTrace();
                     return;
@@ -428,7 +489,11 @@ public class BluetoothServices {
         public void cancel()
         {
             Log.d(LOGTAG,"Cancel TransmissionThread - closing socket.");
-            // TODO: Cleanup ?
+            try {
+                mIn.close();
+                mOut.close();
+                mSocket.close();
+            } catch (IOException e) {e.printStackTrace();}
         }
     }
 

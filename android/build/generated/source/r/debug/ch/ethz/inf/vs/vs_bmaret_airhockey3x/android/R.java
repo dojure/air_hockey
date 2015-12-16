@@ -1530,7 +1530,7 @@ containing a value of this type.
         public static final int action_mode_bar=0x7f0c003d;
         public static final int action_mode_bar_stub=0x7f0c003c;
         public static final int action_mode_close_button=0x7f0c0025;
-        public static final int action_settings=0x7f0c006a;
+        public static final int action_settings=0x7f0c006b;
         public static final int activity_chooser_view_content=0x7f0c0026;
         public static final int alertTitle=0x7f0c0030;
         public static final int always=0x7f0c0016;
@@ -1548,6 +1548,7 @@ containing a value of this type.
         public static final int devices_list=0x7f0c005b;
         public static final int dialog=0x7f0c001b;
         public static final int disableHome=0x7f0c000c;
+        public static final int discover_btn=0x7f0c006a;
         public static final int dropdown=0x7f0c001c;
         public static final int edit_query=0x7f0c0042;
         public static final int end=0x7f0c0014;
@@ -1660,10 +1661,12 @@ containing a value of this type.
         public static final int activity_main=0x7f04001a;
         public static final int activity_settings=0x7f04001b;
         public static final int activity_setup=0x7f04001c;
-        public static final int select_dialog_item_material=0x7f04001d;
-        public static final int select_dialog_multichoice_material=0x7f04001e;
-        public static final int select_dialog_singlechoice_material=0x7f04001f;
-        public static final int support_simple_spinner_dropdown_item=0x7f040020;
+        public static final int activity_setup_activity_frozen=0x7f04001d;
+        public static final int activity_setup_activity_leader=0x7f04001e;
+        public static final int select_dialog_item_material=0x7f04001f;
+        public static final int select_dialog_multichoice_material=0x7f040020;
+        public static final int select_dialog_singlechoice_material=0x7f040021;
+        public static final int support_simple_spinner_dropdown_item=0x7f040022;
     }
     public static final class menu {
         public static final int menu_main=0x7f0d0000;
@@ -1694,14 +1697,20 @@ containing a value of this type.
         public static final int action_settings=0x7f060011;
         public static final int app_display_name=0x7f060012;
         public static final int app_name=0x7f060013;
-        public static final int device_name=0x7f060014;
-        public static final int discoverable=0x7f060015;
-        public static final int pl_holder_no_participants=0x7f060016;
-        public static final int save=0x7f060017;
-        public static final int title_activity_game=0x7f060018;
-        public static final int title_activity_settings=0x7f060019;
-        public static final int title_activity_setup=0x7f06001a;
-        public static final int update=0x7f06001b;
+        public static final int connection_lost_message1=0x7f060014;
+        public static final int connection_lost_message2=0x7f060015;
+        public static final int connection_lost_title=0x7f060016;
+        public static final int device_name=0x7f060017;
+        public static final int discoverable=0x7f060018;
+        public static final int hello_world=0x7f060019;
+        public static final int no_name=0x7f06001a;
+        public static final int pl_holder_no_participants=0x7f06001b;
+        public static final int save=0x7f06001c;
+        public static final int title_activity_settings=0x7f06001d;
+        public static final int title_activity_setup=0x7f06001e;
+        public static final int title_activity_setup_activity_frozen=0x7f06001f;
+        public static final int title_activity_setup_activity_leader=0x7f060020;
+        public static final int update=0x7f060021;
     }
     public static final class style {
         public static final int AlertDialog_AppCompat=0x7f08006c;

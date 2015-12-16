@@ -43,6 +43,7 @@ public class BluetoothComm implements BluetoothServicesListener {
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothServices mBS;
     private int mNoConnections = -1; // Nr of connections that we must support
+    private static int nrOfInstancesReturned = 0;
 
     private List<BluetoothDevice> mDevices = new ArrayList<>(); // Devices from scan or already paired
     private int mCurrentPlayerPos = -1;
@@ -84,40 +85,47 @@ public class BluetoothComm implements BluetoothServicesListener {
 
 
     private static BluetoothComm ourInstance = new BluetoothComm();
-    public static BluetoothComm getInstance() {return ourInstance;}
+    public static BluetoothComm getInstance()
+    {
+        nrOfInstancesReturned++;
+        return ourInstance;
+    }
 
     public void init(BluetoothCommListener listener, Context appContext)
     {
-        mContext = appContext;
-        mListener = listener;
+        // Init only first time !
+        if (nrOfInstancesReturned == 1) {
+            mContext = appContext;
+            mListener = listener;
 
-        mBS = new BluetoothServices(this);
+            mBS = new BluetoothServices(this);
 
-        // Get Bluetooth adapter
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            // Get Bluetooth adapter
+            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        // Ensures Bluetooth is available on the device and it is enabled. If not,
-        // displays a dialog requesting user permission to enable Bluetooth.
-        // If this is not successful exit.
-        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
-            Log.d(LOGTAG,"Bluetooth not enabled or not supported");
+            // Ensures Bluetooth is available on the device and it is enabled. If not,
+            // displays a dialog requesting user permission to enable Bluetooth.
+            // If this is not successful exit.
+            if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
+                Log.d(LOGTAG, "Bluetooth not enabled or not supported");
 
-            // TODO: Exit gracefully if Bluetooth is not supported
-            // TODO: If Bluetooth is just not enabled, prompt a dialog to enable it
+                // TODO: Exit gracefully if Bluetooth is not supported
+                // TODO: If Bluetooth is just not enabled, prompt a dialog to enable it
 
-            //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        }
+                //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            }
 
 //        //test clear devices
 //        mDevices.clear();
 
-        // Register bluetooth callback
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
-        mContext.registerReceiver(receiver, filter);
+            // Register bluetooth callback
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(BluetoothDevice.ACTION_FOUND);
+            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+            filter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+            mContext.registerReceiver(receiver, filter);
+        }
     }
 
     /**
@@ -194,7 +202,7 @@ public class BluetoothComm implements BluetoothServicesListener {
     {
         // TODO: Cleanup when done -> maybe something about the bluetooth callback
         // Also figure out a good place to call this
-        mBS.stop();
+        mBS.reset();
     }
 
 
@@ -332,8 +340,8 @@ public class BluetoothComm implements BluetoothServicesListener {
 
         switch (msgType) {
             case Message.INVITE_MSG:
-                mBS.setPosForLastConnectedDevice(msg.getSender());
-                mListener.onPlayerConnected(msg.getSender());
+                String name = mBS.setPosForLastConnectedDevice(msg.getSender());
+                mListener.onPlayerConnected(msg.getSender(),name);
                 mCurrentPlayerPos = -1; // Not sure if needed bcz we are dealing at the moment with the sender
                 break;
             case Message.INVITE_REMOTE_MSG:
@@ -356,14 +364,19 @@ public class BluetoothComm implements BluetoothServicesListener {
      * Device with given address was connected.
      * @param deviceAddr    Address of connected device
      */
-    public void onConnected(String deviceAddr)
+    public void onConnected(String deviceAddr, String name)
     {
         Log.d(LOGTAG, "Connected to " + deviceAddr);
         if (mCurrentPlayerPos != -1) {
-            mListener.onPlayerConnected(mCurrentPlayerPos); // Notify listener
+            mListener.onPlayerConnected(mCurrentPlayerPos, name); // Notify listener
             mCurrentPlayerPos = -1;
         } else Log.d(LOGTAG,"mCurrenPlayer was -1!");
 
+    }
+
+    public void onConnectionLost(int pos)
+    {
+        mListener.onPlayerDisconnected(pos);
     }
 
     /**
@@ -372,6 +385,10 @@ public class BluetoothComm implements BluetoothServicesListener {
      */
     public void changeDeviceName(String name){
         mBluetoothAdapter.setName(name);
+    }
+
+    public String getDeviceName(){
+        return mBluetoothAdapter.getName();
     }
 
     //may not needed anymore....

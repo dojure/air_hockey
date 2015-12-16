@@ -329,7 +329,7 @@ public class SetupActivity extends AppCompatActivity
      * Player is connected. Invite him into game
      * @param pos   Position where the other player is located
      */
-    public void onPlayerConnected(int pos)
+    public void onPlayerConnected(int pos, String name)
     {
         // Let progressbar disappear
         runOnUiThread(new Runnable() {
@@ -427,6 +427,7 @@ public class SetupActivity extends AppCompatActivity
 
     }
 
+    public void onPlayerDisconnected(int pos) {Log.d(LOGTAG,"Called unused callback");}
 
 
 
