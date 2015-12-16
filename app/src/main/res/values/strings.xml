@@ -16,5 +16,14 @@
     <string name="device_name">Device name: </string>
     <string name="save">SAVE</string>
     <string name="update">UPDATE</string>
+    <string name="title_activity_setup_activity_leader">Setup</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_setup_activity_frozen">Setup</string>
+
+    <!-- Connection lost -->
+    <string name="connection_lost_title">Connection lost</string>
+    <string name="connection_lost_message1">The connection to </string>
+    <string name="connection_lost_message2">was lost. Pleasy try again.</string>
 
 </resources>

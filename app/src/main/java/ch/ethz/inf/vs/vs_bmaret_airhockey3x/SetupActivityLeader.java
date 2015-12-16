@@ -58,31 +58,25 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.game.Player;
  */
 
 
-public class SetupActivity extends AppCompatActivity
+public class SetupActivityLeader extends AppCompatActivity
         implements View.OnClickListener, BluetoothCommListener {
 
-    private final static String LOGTAG = "SetupActivity";
-    public final static String ACTIVE = "active";
-    public final static String INVITER_POS = "inviter";
+    private final static String LOGTAG = "SetupActivityLeader";
 
     private Game mGame;
-    private int mInviter = -1; // The player which went first into the setup screen (only not -1 if !mActive)
     private BluetoothComm mBC;
     private ListView mDevicesListView;
     private ArrayAdapter<String> mAdapter;
     private ImageButton[] mImageButtons = new ImageButton[3];
     private Player mCurrentPlayer = null;
     private int mSetupEnteredACKReceived = 0;
-    private boolean mActive; // True iff this is the one who invites others
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_setup);
-
-        mActive = getIntent().getBooleanExtra(ACTIVE,false);
+        setContentView(R.layout.activity_setup_activity_leader);
 
         ImageButton b1 = (ImageButton) findViewById(R.id.player1_btn);
         mImageButtons[0] = b1;
@@ -96,16 +90,6 @@ public class SetupActivity extends AppCompatActivity
 
         CheckBox cb = (CheckBox) findViewById(R.id.ready_ckbox);
         cb.setOnClickListener(this);
-
-        // Freeze buttons for players which are not the leader
-        if (!mActive) {
-            b1.setEnabled(false);
-            b2.setEnabled(false);
-            b3.setEnabled(false);
-            Button scanb = (Button) findViewById(R.id.scan_button);
-            scanb.setText(R.string.discoverable);
-            scanb.setEnabled(false);
-        }
 
         // DEBUG - Test message button - remove later
         Button b = (Button) findViewById(R.id.test_msg_btn1);
@@ -140,34 +124,11 @@ public class SetupActivity extends AppCompatActivity
         mBC = BluetoothComm.getInstance();
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
-        if (mActive) scan(true); // Scan only if leader
-        else scan(false);
+        scan(true); // Scan only if leader
 
         //addPairedDevicesToList();
 
         setEnableListView(false);
-
-        if (!mActive) {
-            mInviter = getIntent().getIntExtra(INVITER_POS,-1);
-            mGame.getPlayer(mInviter).setConnected(true);
-            switch (mInviter) {
-                case 1:
-                    b1.setImageResource(R.drawable.occupied_selector);
-                    Message msg1 = new ACKSetupMessage(1,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
-                    mBC.sendMessage(msg1);
-                    break;
-                case 2:
-                    b2.setImageResource(R.drawable.occupied_selector);
-                    Message msg2 = new ACKSetupMessage(2,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
-                    mBC.sendMessage(msg2);
-                    break;
-                case 3:
-                    b3.setImageResource(R.drawable.occupied_selector);
-                    Message msg3 = new ACKSetupMessage(3,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
-                    mBC.sendMessage(msg3);
-                    break;
-            }
-        }
     }
 
 
@@ -175,6 +136,8 @@ public class SetupActivity extends AppCompatActivity
     protected void onDestroy()
     {
         super.onDestroy();
+        Log.d(LOGTAG, "onDestroy");
+        mBC.stop();
         mBC.unregisterListener(this);
         scan(false);
 
@@ -220,13 +183,7 @@ public class SetupActivity extends AppCompatActivity
                 } else b.setSelected(false);
                 break;
             case R.id.scan_button:
-                if (mActive){
                     scan(true);
-                }
-                else {
-                    mBC.discoverable(true);
-                    b.setEnabled(false);
-                }
                 break;
 
 
@@ -257,16 +214,7 @@ public class SetupActivity extends AppCompatActivity
      *
      */
 
-    /**
-     * If not discoverable anymore may enable button to make discoverable again
-     */
-    public void onNotDiscoverable()
-    {
-        if (!mActive) {
-            Button b = (Button) findViewById(R.id.scan_button);
-            b.setEnabled(true);
-        }
-    }
+    public void onNotDiscoverable() {Log.d(LOGTAG, "Unused callback called");}
 
     /**
      * TODO: Could also only put name into list. This would also imply changes in BluetoothComm
@@ -343,27 +291,17 @@ public class SetupActivity extends AppCompatActivity
         // Send invite message to connected player (if mActive)
         mGame.getPlayer(pos).setConnected(true);
         ImageButton b = null;
+        Message msg = new InviteMessage(pos);
+        mBC.sendMessage(msg);
         switch (pos) {
             case 1:
                 b = (ImageButton) findViewById(R.id.player1_btn);
-                if(mActive) {
-                    Message msg1 = new InviteMessage(1);
-                    mBC.sendMessage(msg1);
-                }
                 break;
             case 2:
                 b = (ImageButton) findViewById(R.id.player2_btn);
-                if(mActive) {
-                    Message msg1 = new InviteMessage(2);
-                    mBC.sendMessage(msg1);
-                }
                 break;
             case 3:
                 b = (ImageButton) findViewById(R.id.player3_btn);
-                if(mActive) {
-                    Message msg1 = new InviteMessage(3);
-                    mBC.sendMessage(msg1);
-                }
                 break;
         }
 
@@ -390,14 +328,29 @@ public class SetupActivity extends AppCompatActivity
         }
         if (connectedPlayers == mGame.getNrPlayer()) {
             Log.d(LOGTAG, "We are connected to all other players.");
-
-            // Could do stuff here
-
-            if (!mActive) {
-                ACKSetupMessage ack = new ACKSetupMessage(mInviter, ACKSetupMessage.ALL_CONNECTED);
-                mBC.sendMessage(ack);
-            }
         }
+    }
+
+    public void onPlayerDisconnected(int pos)
+    {
+        final int position = pos;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityLeader.this).create();
+                alertDialog.setTitle(R.string.connection_lost_title);
+                String errorMsg = getString(R.string.connection_lost_message1) + " player "
+                        + Integer.toString(position) + getString(R.string.connection_lost_message2);
+                alertDialog.setMessage(errorMsg);
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
+            }
+        });
     }
 
     /**
@@ -427,7 +380,6 @@ public class SetupActivity extends AppCompatActivity
 
     }
 
-    public void onPlayerDisconnected(int pos) {Log.d(LOGTAG,"Called unused callback");}
 
 
 
@@ -445,23 +397,21 @@ public class SetupActivity extends AppCompatActivity
      */
     private void handleAckMessage(ACKSetupMessage ack)
     {
-        if (mActive && ack.getAckCode() == ACKSetupMessage.ENTERED_SETUP_ACTIVITY) {
+        if (ack.getAckCode() == ACKSetupMessage.ENTERED_SETUP_ACTIVITY) {
             mSetupEnteredACKReceived++;
             if (mSetupEnteredACKReceived == mGame.getNrPlayer()-1) {
                 Log.d(LOGTAG,"All other players have entered the setup screen -> start remote inviting");
                 mBC.remoteInvite(1,3); // TODO: Make general this is only for three players
             }
         } else if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
-            if (mActive) {
 
-                // TODO: !!! Should probably also have a counter like above. Like this the broadcast is
-                // probably sent multiple times ??
+            // TODO: !!! Should probably also have a counter like above. Like this the broadcast is
+            // probably sent multiple times ??
 
-                Log.d(LOGTAG,"All other players have all their connections ready");
-                // Broadcast ALL_CONNECTED s.t. the others can also makre their ready checkbox visible
-                ACKSetupMessage ack1 = new ACKSetupMessage(Message.BROADCAST,ACKSetupMessage.ALL_CONNECTED);
-                mBC.sendMessage(ack1);
-            }
+            Log.d(LOGTAG,"All other players have all their connections ready");
+            // Broadcast ALL_CONNECTED s.t. the others can also makre their ready checkbox visible
+            ACKSetupMessage ack1 = new ACKSetupMessage(Message.BROADCAST,ACKSetupMessage.ALL_CONNECTED);
+            mBC.sendMessage(ack1);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -522,7 +472,7 @@ public class SetupActivity extends AppCompatActivity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivity.this).create();
+                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityLeader.this).create();
                 alertDialog.setTitle("DEBUG");
                 alertDialog.setMessage("Got a message !! Receiver at pos: "
                         + Integer.toString(finalMsg.getSender()) + " Message type: " +
