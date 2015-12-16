@@ -1703,14 +1703,16 @@ containing a value of this type.
         public static final int device_name=0x7f060017;
         public static final int discoverable=0x7f060018;
         public static final int hello_world=0x7f060019;
-        public static final int no_name=0x7f06001a;
-        public static final int pl_holder_no_participants=0x7f06001b;
-        public static final int save=0x7f06001c;
-        public static final int title_activity_settings=0x7f06001d;
-        public static final int title_activity_setup=0x7f06001e;
-        public static final int title_activity_setup_activity_frozen=0x7f06001f;
-        public static final int title_activity_setup_activity_leader=0x7f060020;
-        public static final int update=0x7f060021;
+        public static final int invitation_title=0x7f06001a;
+        public static final int invitation_txt=0x7f06001b;
+        public static final int no_name=0x7f06001c;
+        public static final int pl_holder_no_participants=0x7f06001d;
+        public static final int save=0x7f06001e;
+        public static final int title_activity_settings=0x7f06001f;
+        public static final int title_activity_setup=0x7f060020;
+        public static final int title_activity_setup_activity_frozen=0x7f060021;
+        public static final int title_activity_setup_activity_leader=0x7f060022;
+        public static final int update=0x7f060023;
     }
     public static final class style {
         public static final int AlertDialog_AppCompat=0x7f08006c;

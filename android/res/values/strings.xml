@@ -27,5 +27,7 @@
     <string name="connection_lost_title">Connection lost</string>
     <string name="connection_lost_message1">The connection to </string>
     <string name="connection_lost_message2"> was lost. Pleas try again.</string>
+    <string name="invitation_title">Invitation</string>
+    <string name="invitation_txt"> wants to invite?</string>
 
 </resources>

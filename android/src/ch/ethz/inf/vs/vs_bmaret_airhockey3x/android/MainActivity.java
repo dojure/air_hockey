@@ -105,9 +105,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public void onPlayerConnected(int pos,String name) {
-        // TODO: Show dialog which asks user first if he want to participate
+    public void onPlayerConnected(final int pos, final String name) {
 
+        final String nameTxt = name;
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                alertDialog.setTitle(R.string.invitation_title);
+                String msg = nameTxt+ " " + getString(R.string.invitation_txt);
+                alertDialog.setMessage(msg);
+                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                startSetupActivityFrozen(pos, name);
+                            }
+                        });
+                alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "NO",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                mBC.stop();
+                            }
+                        });
+                alertDialog.show();
+            }
+        });
+
+
+    }
+
+    public void startSetupActivityFrozen(int pos, String name){
         // Connected to leader (he sent an invite message) -> directly go to frozen setup screen
         Intent i0 = new Intent(this, SetupActivityFrozen.class);
         //i0.putExtra(SetupActivity.ACTIVE,false);
