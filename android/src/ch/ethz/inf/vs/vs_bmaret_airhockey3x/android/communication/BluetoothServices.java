@@ -301,6 +301,9 @@ public class BluetoothServices {
         mPendingMessages.remove(address);
         mSocketsMap.remove(address); // Socket is cloesd by t.cancel() above
         mAddtressToNameMap.remove(address);
+
+        // Start listening again
+        listen();
     }
 
 
@@ -372,8 +375,8 @@ public class BluetoothServices {
             BluetoothSocket socket = null;
 
             // Just try UUIDs one after another until one works
-            for (int i = 0; i < mUUIDs.length && socket == null; i++){
-                UUID uuid = mUUIDs[i];
+            for (int i = 0; i < 10*mUUIDs.length && socket == null; i++){
+                UUID uuid = mUUIDs[i % mUUIDs.length];
                 if (uuid != null) Log.d(LOGTAG, "Try connecting with uuid " + uuid.toString());
                 else Log.d(LOGTAG,"Somehow uuid was null while trying to connect");
                 for (int j= 0 ; j < 3 && socket == null; j++) {
@@ -386,12 +389,15 @@ public class BluetoothServices {
                 }
             }
 
-            if (socket == null) Log.d(LOGTAG,"Tried all UUIDs but couldnt make connection");
-            mSocketsMap.put(addr, socket);
-            String name = socket.getRemoteDevice().getName();
-            if (name != null) mAddtressToNameMap.put(addr, name);
-            else Log.d(LOGTAG,"Remote name was null");
-            transmit(addr);
+            if (socket == null) {
+                Log.d(LOGTAG,"Tried all UUIDs (10 times) but couldnt make connection");
+            } else {
+                mSocketsMap.put(addr, socket);
+                String name = socket.getRemoteDevice().getName();
+                if (name != null) mAddtressToNameMap.put(addr, name);
+                else Log.d(LOGTAG,"Remote name was null");
+                transmit(addr);
+            }
         }
 
         public void cancel()
@@ -417,6 +423,8 @@ public class BluetoothServices {
             return myBSock;
         } catch (IOException e) {
             Log.d(LOGTAG, "IOException in getConnectedSocket - uuid probably already in use");
+        } catch (NullPointerException e) {
+            Log.d(LOGTAG, "NullpointerException - uuid probably already in use");
         }
         return null;
     }
@@ -464,8 +472,8 @@ public class BluetoothServices {
                 } catch (IOException e) {
                     Log.d(LOGTAG, "Connection lost - Start listening again for incoming connections");
                     connectionFailed(mAddress);
-                    listen(); // TODO: yes? no? Call connectionerror?
-                    e.printStackTrace();
+                    //listen(); // TODO: yes? no? Call connectionerror?
+                    //e.printStackTrace();
                     return;
                 }
             }
