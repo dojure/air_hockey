@@ -71,6 +71,7 @@ public class SetupActivityLeader extends AppCompatActivity
     private ImageButton[] mImageButtons = new ImageButton[3];
     private Player mCurrentPlayer = null;
     private int mSetupEnteredACKReceived = 0;
+    private int mSetupAllConnectedAcksReceived = 0;
 
 
     @Override
@@ -425,21 +426,20 @@ public class SetupActivityLeader extends AppCompatActivity
                 mBC.remoteInvite(1,3); // TODO: Make general this is only for three players
             }
         } else if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
-
-            // TODO: !!! Should probably also have a counter like above. Like this the broadcast is
-            // probably sent multiple times ??
-
-            Log.d(LOGTAG,"All other players have all their connections ready");
-            // Broadcast ALL_CONNECTED s.t. the others can also makre their ready checkbox visible
-            ACKSetupMessage ack1 = new ACKSetupMessage(Message.BROADCAST,ACKSetupMessage.ALL_CONNECTED);
-            mBC.sendMessage(ack1);
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    CheckBox cb = (CheckBox) findViewById(R.id.ready_ckbox);
-                    cb.setEnabled(true);
-                }
-            });
+            mSetupEnteredACKReceived++;
+            if (mSetupAllConnectedAcksReceived == mGame.getNrPlayer()-1) {
+                Log.d(LOGTAG,"All other players have all their connections ready");
+                // Broadcast ALL_CONNECTED s.t. the others can also makre their ready checkbox visible
+                ACKSetupMessage ack1 = new ACKSetupMessage(Message.BROADCAST,ACKSetupMessage.ALL_CONNECTED);
+                mBC.sendMessage(ack1);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        CheckBox cb = (CheckBox) findViewById(R.id.ready_ckbox);
+                        cb.setEnabled(true);
+                    }
+                });
+            }
         }
     }
 

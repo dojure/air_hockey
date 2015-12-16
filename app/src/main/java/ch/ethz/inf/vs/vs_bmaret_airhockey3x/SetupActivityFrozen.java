@@ -101,16 +101,12 @@ public class SetupActivityFrozen extends AppCompatActivity
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
 
-<<<<<<< HEAD
         TextView ownName = (TextView)findViewById(R.id.player0_name);
         ownName.setText(mBC.getDeviceName());
 
-        mInviter = getIntent().getIntExtra(INVITER_POS,-1);
-=======
         mInviter = getIntent().getIntExtra(INVITER_POS, -1);
         String inviterName = getIntent().getStringExtra(INVITER_NAME);
         if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
->>>>>>> origin/master
         mGame.getPlayer(mInviter).setConnected(true);
         Message msg = new ACKSetupMessage(mInviter,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
         mBC.sendMessage(msg); // Send ACK
@@ -221,7 +217,7 @@ public class SetupActivityFrozen extends AppCompatActivity
      * Player is connected. Invite him into game
      * @param pos   Position where the other player is located
      */
-    public void onPlayerConnected(int pos, String name)
+    public void onPlayerConnected(int pos, final String name)
     {
         // Let progressbar disappear
         runOnUiThread(new Runnable() {
@@ -234,21 +230,26 @@ public class SetupActivityFrozen extends AppCompatActivity
 
         mGame.getPlayer(pos).setConnected(true);
         ImageButton b = null;
+        TextView nameField = null;
         switch (pos) {
             case 1:
                 b = (ImageButton) findViewById(R.id.player1_btn);
+                nameField = (TextView) findViewById(R.id.player1_name);
                 break;
             case 2:
                 b = (ImageButton) findViewById(R.id.player2_btn);
+                nameField = (TextView) findViewById(R.id.player2_name);
                 break;
             case 3:
                 b = (ImageButton) findViewById(R.id.player3_btn);
+                nameField = (TextView) findViewById(R.id.player3_name);
                 break;
         }
 
         // Change button color
         if (b!= null) {
             final ImageButton button = b;
+            final TextView nameF = nameField;
             try {
                 runOnUiThread(new Runnable() {
                     @Override
@@ -256,6 +257,7 @@ public class SetupActivityFrozen extends AppCompatActivity
                         Log.d(LOGTAG, "Changing background of button...");
                         button.setImageResource(R.drawable.occupied_selector);
                         button.setSelected(false);
+                        nameF.setText(name);
                     }
                 });
             } catch (NullPointerException e) {e.printStackTrace();}
