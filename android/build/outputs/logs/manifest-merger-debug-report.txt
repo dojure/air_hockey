@@ -1,0 +1,113 @@
+-- Merging decision tree log ---
+manifest
+ADDED from AndroidManifest.xml:2:1
+	package
+		ADDED from AndroidManifest.xml:3:5
+	android:versionName
+		ADDED from AndroidManifest.xml:5:5
+	android:versionCode
+		ADDED from AndroidManifest.xml:4:5
+		INJECTED from AndroidManifest.xml:0:0
+		INJECTED from AndroidManifest.xml:0:0
+	xmlns:android
+		ADDED from AndroidManifest.xml:2:11
+uses-permission#android.permission.BLUETOOTH
+ADDED from AndroidManifest.xml:7:5
+	android:name
+		ADDED from AndroidManifest.xml:7:22
+uses-permission#android.permission.BLUETOOTH_ADMIN
+ADDED from AndroidManifest.xml:8:5
+	android:name
+		ADDED from AndroidManifest.xml:8:22
+uses-feature#0x00020000
+ADDED from AndroidManifest.xml:10:5
+	android:glEsVersion
+		ADDED from AndroidManifest.xml:10:19
+	android:required
+		ADDED from AndroidManifest.xml:10:52
+uses-sdk
+ADDED from AndroidManifest.xml:12:5
+MERGED from com.android.support:support-v4:22.1.0:20:5
+MERGED from com.android.support:appcompat-v7:22.1.0:20:5
+MERGED from com.android.support:support-v4:22.1.0:20:5
+	android:targetSdkVersion
+		ADDED from AndroidManifest.xml:12:42
+	android:minSdkVersion
+		ADDED from AndroidManifest.xml:12:15
+application
+ADDED from AndroidManifest.xml:14:5
+MERGED from com.android.support:support-v4:22.1.0:22:5
+MERGED from com.android.support:appcompat-v7:22.1.0:22:5
+MERGED from com.android.support:support-v4:22.1.0:22:5
+	android:label
+		ADDED from AndroidManifest.xml:17:9
+	android:allowBackup
+		ADDED from AndroidManifest.xml:15:9
+	android:icon
+		ADDED from AndroidManifest.xml:16:9
+	android:theme
+		ADDED from AndroidManifest.xml:18:9
+activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.AndroidLauncher
+ADDED from AndroidManifest.xml:19:9
+	android:screenOrientation
+		ADDED from AndroidManifest.xml:22:13
+	android:label
+		ADDED from AndroidManifest.xml:21:13
+	android:configChanges
+		ADDED from AndroidManifest.xml:23:13
+	android:name
+		ADDED from AndroidManifest.xml:20:13
+meta-data#android.support.PARENT_ACTIVITY
+ADDED from AndroidManifest.xml:28:13
+	android:value
+		ADDED from AndroidManifest.xml:30:17
+	android:name
+		ADDED from AndroidManifest.xml:29:17
+activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.MainActivity
+ADDED from AndroidManifest.xml:33:9
+	android:label
+		ADDED from AndroidManifest.xml:36:13
+	android:configChanges
+		ADDED from AndroidManifest.xml:35:13
+	android:name
+		ADDED from AndroidManifest.xml:34:13
+intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER
+ADDED from AndroidManifest.xml:37:13
+action#android.intent.action.MAIN
+ADDED from AndroidManifest.xml:38:17
+	android:name
+		ADDED from AndroidManifest.xml:38:25
+category#android.intent.category.LAUNCHER
+ADDED from AndroidManifest.xml:40:17
+	android:name
+		ADDED from AndroidManifest.xml:40:27
+activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SettingsActivity
+ADDED from AndroidManifest.xml:43:9
+	android:label
+		ADDED from AndroidManifest.xml:46:13
+	android:configChanges
+		ADDED from AndroidManifest.xml:45:13
+	android:name
+		ADDED from AndroidManifest.xml:44:13
+activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SetupActivity
+ADDED from AndroidManifest.xml:51:9
+	android:screenOrientation
+		ADDED from AndroidManifest.xml:55:13
+	android:label
+		ADDED from AndroidManifest.xml:54:13
+	android:configChanges
+		ADDED from AndroidManifest.xml:53:13
+	android:name
+		ADDED from AndroidManifest.xml:52:13
+activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game_test.GameActivity
+ADDED from AndroidManifest.xml:60:9
+	android:screenOrientation
+		ADDED from AndroidManifest.xml:63:13
+	android:label
+		ADDED from AndroidManifest.xml:62:13
+	android:parentActivityName
+		ADDED from AndroidManifest.xml:64:13
+	android:theme
+		ADDED from AndroidManifest.xml:65:13
+	android:name
+		ADDED from AndroidManifest.xml:61:13
