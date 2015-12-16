@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.text.LoginFilter;
 import android.util.Log;
 
 import java.io.IOException;
@@ -35,7 +34,8 @@ public class BluetoothServices {
     private ConnectThread mConnectThread;
     private ListenThread mListenThread;
 
-    private static UUID[] mUUIDs;
+    //private static UUID[] mUUIDs;
+    private ArrayList<UUID> mUuid;
 
     private List<String> mDeviceAddresses;  // All addresses seen
     private HashMap<Integer,String> mPositionToAddressMap;  // Map positions to addresses - IMPORTANT
@@ -56,14 +56,29 @@ public class BluetoothServices {
         mPositionToAddressMap = new HashMap<>();
         mPendingMessages = new HashMap<>();
 
+        /*
         // Basically we are always just trying if one works and if not we just
         mUUIDs = new UUID[6];
-        mUUIDs[0] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a60");
+        //mUUIDs[0] = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a60");
+        mUUIDs[0] = UUID.fromString("a60f35f0-b93a-11de-8a39-08002009c666");
         mUUIDs[1] = UUID.fromString("503c7430-bc23-11de-8a39-0800200c9a66");
         mUUIDs[1] = UUID.fromString("503c7431-bc23-11de-8a39-0800200c9a66");
         mUUIDs[1] = UUID.fromString("503c7432-bc23-11de-8a39-0800200c9a66");
         mUUIDs[1] = UUID.fromString("503c7433-bc23-11de-8a39-0800200c9a66");
         mUUIDs[1] = UUID.fromString("503c7434-bc23-11de-8a39-0800200c9a66");
+        mUUIDs[1] = UUID.fromString("503c7435-bc23-11de-8a39-0800200c9a66");
+        */
+        mUuid = new ArrayList<>();
+        mUuid.add(UUID.fromString("a60f35f0-b93a-11de-8a39-08002009c666"));
+        mUuid.add(UUID.fromString("503c7430-bc23-11de-8a39-0800200c9a66"));
+        mUuid.add(UUID.fromString("503c7431-bc23-11de-8a39-0800200c9a66"));
+        mUuid.add(UUID.fromString("503c7432-bc23-11de-8a39-0800200c9a66"));
+        mUuid.add(UUID.fromString("503c7433-bc23-11de-8a39-0800200c9a66"));
+        mUuid.add(UUID.fromString("503c7434-bc23-11de-8a39-0800200c9a66"));
+        mUuid.add(UUID.fromString("503c7435-bc23-11de-8a39-0800200c9a66"));
+
+
+
     }
 
     /**
@@ -142,6 +157,7 @@ public class BluetoothServices {
      */
     public synchronized void connect(String deviceAddress, int playerPos)
     {
+        Log.d(LOGTAG,"Connect to player " + Integer.toString(playerPos) + " with address " + deviceAddress);
         String deviceAdress = deviceAddress;
         mPositionToAddressMap.put(playerPos, deviceAdress);
         mConnectThread = new ConnectThread(deviceAdress);
@@ -302,8 +318,15 @@ public class BluetoothServices {
         mSocketsMap.remove(address); // Socket is cloesd by t.cancel() above
         mAddtressToNameMap.remove(address);
 
+        /*
         // Start listening again
+        // Cancel all threads that are listening
+        if (mListenThread != null) {
+            mListenThread.cancel();
+            mListenThread = null;
+        }
         listen();
+        */
     }
 
 
@@ -325,7 +348,7 @@ public class BluetoothServices {
         public void run()
         {
             try {
-                for (UUID uuid : mUUIDs) {
+                for (UUID uuid : mUuid) {
                     if (uuid == null) {
                         Log.d(LOGTAG,"Somehow, uuid was null, skip");
                         continue;
@@ -375,22 +398,23 @@ public class BluetoothServices {
             BluetoothSocket socket = null;
 
             // Just try UUIDs one after another until one works
-            for (int i = 0; i < 2*mUUIDs.length && socket == null; i++){
-                UUID uuid = mUUIDs[i % mUUIDs.length];
-                if (uuid != null) Log.d(LOGTAG, "Try connecting with uuid " + uuid.toString());
-                else Log.d(LOGTAG,"Somehow uuid was null while trying to connect");
+            for (int i = 0; i < mUuid.size() && socket == null; i++){
+                UUID uuid = mUuid.get(i % mUuid.size());
+                if (uuid != null) Log.d(LOGTAG, "Try connecting with uuid in thread " +
+                        Long.toString(getId()) + " uuid: " + uuid.toString());
+                else Log.d(LOGTAG,"Somehow uuid was null while trying to connect in thread " + Long.toString(getId()));
                 for (int j= 0 ; j < 3 && socket == null; j++) {
                     socket = getConnectedSocket(server,uuid);
                     if (socket == null) {
                         try {
-                            Thread.sleep(200);
+                            Thread.sleep(300);
                         } catch (InterruptedException e) {e.printStackTrace();}
                     }
                 }
             }
 
             if (socket == null) {
-                Log.d(LOGTAG,"Tried all UUIDs (10 times) but couldnt make connection");
+                Log.d(LOGTAG,"Tried all UUIDs but couldnt make connection");
             } else {
                 mSocketsMap.put(addr, socket);
                 String name = socket.getRemoteDevice().getName();
@@ -471,7 +495,6 @@ public class BluetoothServices {
                         mListener.onReceiveBytes(buf, n);
                     }
                 } catch (IOException e) {
-                    Log.d(LOGTAG, "Connection lost - Start listening again for incoming connections");
                     connectionFailed(mAddress);
                     //listen(); // TODO: yes? no? Call connectionerror?
                     //e.printStackTrace();

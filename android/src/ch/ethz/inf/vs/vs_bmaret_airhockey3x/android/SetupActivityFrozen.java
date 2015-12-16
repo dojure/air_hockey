@@ -74,8 +74,10 @@ public class SetupActivityFrozen extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        Log.d(LOGTAG, "onCreate");
         setContentView(R.layout.activity_setup_activity_frozen);
 
+        /*
         ImageButton b1 = (ImageButton) findViewById(R.id.player1_btn);
         mImageButtons[0] = b1;
         b1.setOnClickListener(this);
@@ -85,6 +87,8 @@ public class SetupActivityFrozen extends AppCompatActivity
         ImageButton b3 = (ImageButton) findViewById(R.id.player3_btn);
         mImageButtons[2] = b3;
         b3.setOnClickListener(this);
+        */
+
 
         CheckBox cb = (CheckBox) findViewById(R.id.ready_ckbox);
         cb.setOnClickListener(this);
@@ -97,28 +101,29 @@ public class SetupActivityFrozen extends AppCompatActivity
         b = (Button) findViewById(R.id.discover_btn);
         b.setOnClickListener(this);
 
-
         initGame(3);
 
         mBC = BluetoothComm.getInstance();
         mBC.setNoConnections(mGame.getNrPlayer());
-        mBC.registerListener(this);
+        //mBC.registerListener(this);
 
-        if (mBC.isDiscoverable()) {
-            b.setEnabled(false);
-        }
+        /*
+        if (mBC.isDiscoverable()) b.setEnabled(false);
+        else b.setEnabled(true);
+        */
 
 
         TextView ownName = (TextView)findViewById(R.id.player0_name);
         ownName.setText(mBC.getDeviceName());
 
         mInviter = getIntent().getIntExtra(INVITER_POS, -1);
-        String inviterName = getIntent().getStringExtra(INVITER_NAME);
-        if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
+        //String inviterName = getIntent().getStringExtra(INVITER_NAME);
+        //if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
         mGame.getPlayer(mInviter).setConnected(true);
         Message msg = new ACKSetupMessage(mInviter,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
         mBC.sendMessage(msg); // Send ACK
 
+        /*
         // Change button color of inviter to greem
         TextView nameField = null;
         switch (mInviter) {
@@ -136,8 +141,55 @@ public class SetupActivityFrozen extends AppCompatActivity
                 break;
         }
         nameField.setText(inviterName);
+        */
     }
 
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        Log.d(LOGTAG, "onResume");
+
+        mBC.registerListener(this);
+
+        ImageButton b1 = (ImageButton) findViewById(R.id.player1_btn);
+        mImageButtons[0] = b1;
+        b1.setOnClickListener(this);
+        ImageButton b2 = (ImageButton) findViewById(R.id.player2_btn);
+        mImageButtons[1] = b2;
+        b2.setOnClickListener(this);
+        ImageButton b3 = (ImageButton) findViewById(R.id.player3_btn);
+        mImageButtons[2] = b3;
+        b3.setOnClickListener(this);
+
+        // Change button color of inviter to greem
+        TextView nameField = null;
+        switch (mInviter) {
+            case 1:
+                b1.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player1_name);
+                break;
+            case 2:
+                b2.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player2_name);
+                break;
+            case 3:
+                b3.setImageResource(R.drawable.occupied_selector);
+                nameField = (TextView) findViewById(R.id.player3_name);
+                break;
+        }
+        String inviterName = getIntent().getStringExtra(INVITER_NAME);
+        if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
+        nameField.setText(inviterName);
+
+        Button b = (Button) findViewById(R.id.discover_btn);
+        b.setOnClickListener(this);
+        if (mBC.isDiscoverable()) b.setEnabled(false);
+        else b.setEnabled(true);
+
+        CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
+        ready.setChecked(false);
+    }
 
     @Override
     protected void onDestroy()
@@ -290,6 +342,7 @@ public class SetupActivityFrozen extends AppCompatActivity
             // Send ACK that all are connected to inviter
             ACKSetupMessage ack = new ACKSetupMessage(mInviter, ACKSetupMessage.ALL_CONNECTED);
             mBC.sendMessage(ack);
+            mBC.listen(true);
         }
     }
 
@@ -319,6 +372,7 @@ public class SetupActivityFrozen extends AppCompatActivity
         final ImageButton b = button;
         final TextView nameF = nameField;
 
+
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -331,6 +385,8 @@ public class SetupActivityFrozen extends AppCompatActivity
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 if (position == mInviter) {
+                                    Log.d(LOGTAG, "Inviter has quit, go back to MainActivity too");
+                                    mBC.stop();
                                     Intent i0 = new Intent(SetupActivityFrozen.this, MainActivity.class);
                                     startActivity(i0);
                                     dialog.dismiss();
@@ -341,6 +397,9 @@ public class SetupActivityFrozen extends AppCompatActivity
                 try {
                     b.setImageResource(R.drawable.vacant_selector);
                     nameF.setText("");
+                    CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
+                    ready.setChecked(false);
+                    ready.setEnabled(false);
                 } catch (NullPointerException e) {e.printStackTrace();}
             }
         });

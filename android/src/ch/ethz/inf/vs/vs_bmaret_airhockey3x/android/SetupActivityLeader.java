@@ -72,8 +72,10 @@ public class SetupActivityLeader extends AppCompatActivity
     private ArrayAdapter<String> mAdapter;
     private ImageButton[] mImageButtons = new ImageButton[3];
     private Player mCurrentPlayer = null;
-    private int mSetupEnteredACKReceived = 0;
-    private int mSetupAllConnectedAcksReceived = 0;
+    private boolean[] mSetupEnteredAcks = new boolean[4];
+    private boolean[] mSetupAllConnectedAcks = new boolean[4];
+    //private int mSetupEnteredACKReceived = 0;
+    //private int mSetupAllConnectedAcksReceived = 0;
     private int mReadyCounter = 0;
 
 
@@ -81,6 +83,7 @@ public class SetupActivityLeader extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        Log.d(LOGTAG, "onCreate");
         setContentView(R.layout.activity_setup_activity_leader);
 
         ImageButton b1 = (ImageButton) findViewById(R.id.player1_btn);
@@ -116,6 +119,7 @@ public class SetupActivityLeader extends AppCompatActivity
                         String entry = (String) parent.getItemAtPosition(position);
                         if (mCurrentPlayer != null) {
                             // Invite other player
+                            Log.d(LOGTAG, "Check onItemClickListener of List");
                             scan(false); // Stop scan to make it faster
                             mBC.invite(mCurrentPlayer.getPosition(), entry);
                         } else Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
@@ -130,9 +134,11 @@ public class SetupActivityLeader extends AppCompatActivity
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
 
+        /*
         //TODO: this is for onResume()
         TextView ownName = (TextView)findViewById(R.id.player0_name);
         ownName.setText(mBC.getDeviceName());
+        */
 
         scan(true); // Scan only if leader
 
@@ -143,8 +149,18 @@ public class SetupActivityLeader extends AppCompatActivity
 
 
     @Override
-    protected void onDestroy()
-    {
+    protected void onResume() {
+        super.onResume();
+        Log.d(LOGTAG, "onResume");
+        TextView ownName = (TextView) findViewById(R.id.player0_name);
+        ownName.setText(mBC.getDeviceName());
+
+        CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
+        ready.setChecked(false);
+    }
+
+    @Override
+    protected void onDestroy() {
         super.onDestroy();
         Log.d(LOGTAG, "onDestroy");
         mBC.stop();
@@ -252,7 +268,7 @@ public class SetupActivityLeader extends AppCompatActivity
             // First call -> initialize Listadapter
             List<String> entries = new ArrayList<>();
             //String entry = name + " " + address;
-            Log.d(LOGTAG,"initialize Listadapter and clear entries");
+            Log.d(LOGTAG, "initialize Listadapter and clear entries");
             entries.clear();
             //entries.add(entry);
             entries.add(name);
@@ -345,6 +361,7 @@ public class SetupActivityLeader extends AppCompatActivity
                         Log.d(LOGTAG, "Changing background of button...");
                         button.setImageResource(R.drawable.occupied_selector);
                         button.setSelected(false);
+                        button.setClickable(false);
                         nameF.setText(name);
                     }
                 });
@@ -370,8 +387,10 @@ public class SetupActivityLeader extends AppCompatActivity
 
         // TODO: Think about this
         mReadyCounter = Math.max(0,mReadyCounter -1);
-        mSetupAllConnectedAcksReceived = Math.max(0,mSetupAllConnectedAcksReceived -1);
-        mSetupEnteredACKReceived = Math.max(0,mSetupEnteredACKReceived -1);
+        //mSetupAllConnectedAcksReceived = Math.max(0,mSetupAllConnectedAcksReceived -1);
+        //mSetupEnteredACKReceived = Math.max(0,mSetupEnteredACKReceived -1);
+        mSetupAllConnectedAcks[pos] = false;
+        mSetupEnteredAcks[pos] = false;
 
         ImageButton button = null;
         TextView nameField = null;
@@ -413,7 +432,11 @@ public class SetupActivityLeader extends AppCompatActivity
 
                 try {
                     b.setImageResource(R.drawable.vacant_selector);
+                    b.setClickable(true);
                     nameF.setText("");
+                    CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
+                    ready.setChecked(false);
+                    ready.setEnabled(false);
                 } catch (NullPointerException e) {e.printStackTrace();}
             }
         });
@@ -474,17 +497,28 @@ public class SetupActivityLeader extends AppCompatActivity
      */
     private void handleAckMessage(ACKSetupMessage ack)
     {
+        int sender = ack.getSender();
         if (ack.getAckCode() == ACKSetupMessage.ENTERED_SETUP_ACTIVITY) {
             Log.d(LOGTAG,"Received ENTERED_SETUP_ACTIVITY ack from player " + ack.getSender());
-            mSetupEnteredACKReceived++;
-            if (mSetupEnteredACKReceived == mGame.getNrPlayer()-1) {
+            //mSetupEnteredACKReceived++;
+            mSetupEnteredAcks[sender] = true;
+            int ackno = 0;
+            for (boolean a : mSetupEnteredAcks) {
+                if(a) ackno++;
+            }
+            if (ackno == mGame.getNrPlayer()-1) {
                 Log.d(LOGTAG,"All other players have entered the setup screen -> start remote inviting");
                 mBC.remoteInvite(1,3); // TODO: Make general this is only for three players
             }
         } else if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
             Log.d(LOGTAG,"Received ALL_CONNECTED ack from player " + ack.getSender());
-            mSetupAllConnectedAcksReceived++;
-            if (mSetupAllConnectedAcksReceived == mGame.getNrPlayer()-1) {
+            //mSetupAllConnectedAcksReceived++;
+            mSetupAllConnectedAcks[sender] = true;
+            int ackno1 = 0;
+            for (boolean a : mSetupEnteredAcks) {
+                if(a) ackno1++;
+            }
+            if (ackno1 == mGame.getNrPlayer()-1) {
                 Log.d(LOGTAG,"All other players have all their connections ready");
                 // Broadcast ALL_CONNECTED s.t. the others can also makre their ready checkbox visible
                 ACKSetupMessage ack1 = new ACKSetupMessage(Message.BROADCAST,ACKSetupMessage.ALL_CONNECTED);

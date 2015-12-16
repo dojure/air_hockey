@@ -66,17 +66,20 @@ public class BluetoothComm implements BluetoothServicesListener {
                             mDevices.add(device);
                             String name = device.getName();
                             String address = device.getAddress();
-                            mListener.onDeviceFound(name, address);
+                            if (mListener != null) mListener.onDeviceFound(name, address);
+                            else Log.d(LOGTAG,"mListener was null");
                         }
                     }
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                    Log.d(LOGTAG,"Scanning done");
-                    mListener.onScanDone();
+                    Log.d(LOGTAG, "Scanning done");
+                    if (mListener != null) mListener.onScanDone();
+                    else Log.d(LOGTAG,"mListener was null");
                     break;
                 case BluetoothAdapter.ACTION_SCAN_MODE_CHANGED:
                     if (mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-                        mListener.onNotDiscoverable();
+                        if (mListener != null) mListener.onNotDiscoverable();
+                        else Log.d(LOGTAG,"mListener was null");
                     }
                     break;
             }
@@ -185,7 +188,8 @@ public class BluetoothComm implements BluetoothServicesListener {
     {
         if(mBluetoothAdapter != null) {
             if (enable && !mBluetoothAdapter.isDiscovering()) {
-                Log.d(LOGTAG,"Scanning..");
+                Log.d(LOGTAG, "Scanning..");
+                clearDeviceList();
                 mBluetoothAdapter.startDiscovery();
             }
             else if (!enable && mBluetoothAdapter.isDiscovering()) {
@@ -260,6 +264,7 @@ public class BluetoothComm implements BluetoothServicesListener {
      */
     public void invite(int playerPos, String entry)
     {
+        Log.d(LOGTAG,"Invite player " + Integer.toString(playerPos) + " entry " + entry);
         if(playerPos >= 0 && playerPos <= 3) {
             mCurrentPlayerPos = playerPos;
 
@@ -272,7 +277,8 @@ public class BluetoothComm implements BluetoothServicesListener {
                 if (d.getName().equals(entry)) {
                     // Open a connection to the device at the specific player
                     mBS.connect(d.getAddress(), mCurrentPlayerPos);
-                    mListener.onStartConnecting();
+                    if (mListener != null)  mListener.onStartConnecting();
+                    else Log.d(LOGTAG,"mListener was null");
                 }
             }
         } else Log.d(LOGTAG, "Tried to get paired device for null-Player");
@@ -347,13 +353,15 @@ public class BluetoothComm implements BluetoothServicesListener {
     {
         Message msg = new Message(bytes, noBytes);
         String msgType = msg.getType();
-        Log.d(LOGTAG,"Receiving message " + msgType);
-        mListener.onReceiveMessage(msg);
+        Log.d(LOGTAG, "Receiving message " + msgType);
+        if (mListener != null) mListener.onReceiveMessage(msg);
+        else Log.d(LOGTAG,"mListener was null");
 
         switch (msgType) {
             case Message.INVITE_MSG:
                 String name = mBS.setPosForLastConnectedDevice(msg.getSender());
-                mListener.onPlayerConnected(msg.getSender(),name);
+                if (mListener != null) mListener.onPlayerConnected(msg.getSender(), name);
+                else Log.d(LOGTAG,"mListener was null");
                 mCurrentPlayerPos = -1; // Not sure if needed bcz we are dealing at the moment with the sender
                 break;
             case Message.INVITE_REMOTE_MSG:
@@ -365,7 +373,8 @@ public class BluetoothComm implements BluetoothServicesListener {
                 mCurrentPlayerPos = 4-absPos;
                 mBS.setPosForAddress(mCurrentPlayerPos, deviceAddress);
                 mBS.connect(deviceAddress, mCurrentPlayerPos);
-                mListener.onStartConnecting();
+                if (mListener != null) mListener.onStartConnecting();
+                else Log.d(LOGTAG,"mListener was null");
                 InviteMessage invm = new InviteMessage(mCurrentPlayerPos);
                 mBS.send(mCurrentPlayerPos, invm.toBytes());
                 break;
@@ -380,7 +389,8 @@ public class BluetoothComm implements BluetoothServicesListener {
     {
         Log.d(LOGTAG, "Connected to " + deviceAddr);
         if (mCurrentPlayerPos != -1) {
-            mListener.onPlayerConnected(mCurrentPlayerPos, name); // Notify listener
+            if (mListener != null) mListener.onPlayerConnected(mCurrentPlayerPos, name); // Notify listener
+            else Log.d(LOGTAG,"mListener was null");
             mCurrentPlayerPos = -1;
         } else Log.d(LOGTAG,"mCurrenPlayer was -1!");
 
@@ -388,7 +398,8 @@ public class BluetoothComm implements BluetoothServicesListener {
 
     public void onConnectionLost(int pos)
     {
-        mListener.onPlayerDisconnected(pos);
+        if (mListener != null) mListener.onPlayerDisconnected(pos);
+        else Log.d(LOGTAG,"mListener was null");
     }
 
     /**

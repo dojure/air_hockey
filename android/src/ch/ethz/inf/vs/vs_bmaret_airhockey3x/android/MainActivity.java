@@ -24,8 +24,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
+        Log.d(LOGTAG, "onCreate");
         setContentView(R.layout.activity_main);
 
         Button b = (Button) findViewById(R.id.play_btn);
@@ -38,13 +40,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mBC = BluetoothComm.getInstance();
         mBC.init(this, getApplicationContext()); // Must only be done once in entire app
-        mBC.registerListener(this);
         mBC.listen(true); // Start listening for incoming connections
     }
 
     @Override
-    public void onResume() {
+    public void onResume()
+    {
         super.onResume();
+        Log.d(LOGTAG, "onResume");
+        mBC.registerListener(this);
 
         // Make buttons appear next to each other when in landscape -> Important if we start off with
         // Landscape
