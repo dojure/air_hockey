@@ -571,7 +571,6 @@ public class SetupActivity extends AppCompatActivity
             mAdapter.clear();
         }
 
-
         mBC.scan(enable);
     }
 

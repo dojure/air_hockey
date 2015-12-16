@@ -19,6 +19,7 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothCommListener;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ACKSetupMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Message;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ReadyMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.TestMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Game;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
@@ -66,6 +67,7 @@ public class SetupActivityFrozen extends AppCompatActivity
     private int mInviter = -1; // The player which went first into the setup screen (only not -1 if !mActive)
     private BluetoothComm mBC;
     private ImageButton[] mImageButtons = new ImageButton[3];
+    private int mReadyCounter = 0;
 
 
     @Override
@@ -164,6 +166,11 @@ public class SetupActivityFrozen extends AppCompatActivity
                 mBC.discoverable(true);
                 b.setEnabled(false);
                 break;
+            case R.id.ready_ckbox:
+                ReadyMessage msg = new ReadyMessage(Message.BROADCAST);
+                mBC.sendMessage(msg);
+                incrementReadyCounter();
+                break;
 
             // DEBUG - Send test messages
             case R.id.test_msg_btn1:
@@ -202,8 +209,7 @@ public class SetupActivityFrozen extends AppCompatActivity
     /**
      * Start connecting. -> Display progress bar
      */
-    public void onStartConnecting()
-    {
+    public void onStartConnecting() {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -219,6 +225,7 @@ public class SetupActivityFrozen extends AppCompatActivity
      */
     public void onPlayerConnected(int pos, final String name)
     {
+        Log.d(LOGTAG,"Player " + name + " connected at pos " + pos);
         // Let progressbar disappear
         runOnUiThread(new Runnable() {
             @Override
@@ -346,6 +353,9 @@ public class SetupActivityFrozen extends AppCompatActivity
                 ACKSetupMessage ack = new ACKSetupMessage(msg);
                 handleAckMessage(ack);
                 break;
+            case Message.READY_MSG:
+                incrementReadyCounter();
+                break;
             case Message.INVITE_MSG:
             case Message.INVITE_REMOTE_MSG:
             default:
@@ -354,15 +364,22 @@ public class SetupActivityFrozen extends AppCompatActivity
     }
 
 
-
-
-
-
     /**
      *
      * Helper functions
      *
      */
+
+
+    private void incrementReadyCounter()
+    {
+        mReadyCounter++;
+        if (mReadyCounter == 3) { // TODO: Change for more players
+            Intent i2 = new Intent(this, AndroidLauncher.class);
+            startActivity(i2);
+        }
+    }
+
 
     /**
      * Handle incoming ACKSetupMessage
