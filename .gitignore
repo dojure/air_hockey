@@ -5,6 +5,7 @@
 .DS_Store
 /build
 /captures
+/android/build
 
 *.zip
 
