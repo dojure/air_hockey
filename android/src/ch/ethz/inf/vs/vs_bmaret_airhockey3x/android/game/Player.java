@@ -14,7 +14,7 @@ public class Player {
     public final String defaultName = "The Name";
 
     private final int mPosition;
-    private boolean mReady = false;
+    private int mScore;
     private boolean mConnected = false; // TODO: Must be updated when connection lost
     private String mName = defaultName;
 
@@ -24,8 +24,6 @@ public class Player {
     }
 
     public int getPosition() {return mPosition;}
-    public void setReady(boolean ready) {mReady = ready;}
-    public boolean isReady() {return mReady;}
     public boolean isConnected() {return mConnected;}
     public void setConnected(boolean connected)
     {
@@ -39,4 +37,6 @@ public class Player {
         else mName = name;
     }
     public String getName() {return mName;}
+    public void setScore(int score) {mScore = score;}
+    public int getScore() {return mScore;}
 }

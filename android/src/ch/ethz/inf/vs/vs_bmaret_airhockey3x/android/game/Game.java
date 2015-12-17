@@ -51,7 +51,7 @@ public class Game {
 
     /**
      * Get player object for position
-     * @param position  Position of player on game
+     * @param position  Position of player in game
      * @return          Player
      */
     public Player getPlayer(int position)
@@ -61,6 +61,26 @@ public class Game {
         return mPlayers.get(position);
     }
 
+    /**
+     * Get player object for name
+     * @param name      Name of player in game
+     * @return          Player
+     */
+    public Player getPlayer(String name)
+    {
+        Player res = null;
+        if (name != null) {
+            for (Player p : mPlayers.values()) {
+                if (p.getName().equals(name)) {
+                    res = p;
+                    break;
+                }
+            }
+        }
+        if(res == null) Log.d(LOGTAG,"Player " + name + " does not exist");
+        return res;
+    }
+
     public List<Player> getAllPlayers()
     {
         Collection<Player> players = mPlayers.values();
@@ -68,18 +88,6 @@ public class Game {
         return playerList;
     }
 
-    /**
-     * The game is ready iff all players are ready
-     * @return      Ready state of game
-     */
-    public boolean ready()
-    {
-        boolean ready = true;
-        for (Player p : mPlayers.values()) {
-            if (!p.isReady()) ready = false;
-        }
-        return ready;
-    }
 
     /**
      * Checks whether there is currently a player whith given name in the game.
@@ -94,4 +102,10 @@ public class Game {
         }
         return res;
     }
+
+    public void resetScores()
+    {
+        for (Player p : mPlayers.values()) p.setScore(0);
+    }
+
 }

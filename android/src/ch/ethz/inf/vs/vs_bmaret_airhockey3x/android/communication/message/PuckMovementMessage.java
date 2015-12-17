@@ -28,7 +28,7 @@ public class PuckMovementMessage extends Message {
 
     public PuckMovementMessage(int receiverPos, float xpos, float ypos)
     {
-        super(receiverPos,Message.ACK_SETUP_MSG);
+        super(receiverPos,Message.PUCK_MOVEMENT_MSG);
 
         mXPos = xpos;
         mYPos = ypos;

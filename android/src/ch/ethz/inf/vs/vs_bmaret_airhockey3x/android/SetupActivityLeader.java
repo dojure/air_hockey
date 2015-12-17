@@ -162,7 +162,10 @@ public class SetupActivityLeader extends AppCompatActivity
         super.onResume();
         Log.d(LOGTAG, "onResume");
         TextView ownName = (TextView) findViewById(R.id.player0_name);
-        ownName.setText(mBC.getDeviceName());
+        String name = mBC.getDeviceName();
+        ownName.setText(name);
+        mGame.getPlayer(0).setName(name);
+        mGame.resetScores();
 
         mBC.registerListener(this);
 
@@ -349,7 +352,7 @@ public class SetupActivityLeader extends AppCompatActivity
      * Player is connected. Invite him into game
      * @param pos   Position where the other player is located
      */
-    public void onPlayerConnected(int pos, final String name)
+    public void onPlayerConnected(final int pos, final String name)
     {
         // Let progressbar disappear
         runOnUiThread(new Runnable() {
@@ -398,6 +401,7 @@ public class SetupActivityLeader extends AppCompatActivity
                         button.setSelected(false);
                         button.setClickable(false);
                         nameF.setText(name);
+                        mGame.getPlayer(pos).setName(name);
                     }
                 });
             } catch (NullPointerException e) {e.printStackTrace();}
@@ -460,6 +464,7 @@ public class SetupActivityLeader extends AppCompatActivity
                     b.setImageResource(R.drawable.vacant_selector);
                     b.setClickable(true);
                     nameF.setText("");
+                    mGame.getPlayer(pos).setName(null);
                     CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
                     ready.setChecked(false);
                     ready.setEnabled(false);

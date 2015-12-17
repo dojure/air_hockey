@@ -26,6 +26,8 @@ public class Message {
     public final static String READY_MSG = "ready_message";
     public final static String ACK_SETUP_MSG = "ack_setup";
     public final static String PUCK_MOVEMENT_MSG = "puck_movement";
+    public final static String SCORE_MSG = "score_message";
+    public final static String EXIT_GAME_MSG = "exit_game";
 
     // Use as position to broadcast
     public final static int BROADCAST = -2;

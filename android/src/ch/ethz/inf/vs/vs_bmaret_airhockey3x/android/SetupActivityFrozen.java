@@ -115,9 +115,6 @@ public class SetupActivityFrozen extends AppCompatActivity
         */
 
 
-        TextView ownName = (TextView)findViewById(R.id.player0_name);
-        ownName.setText(mBC.getDeviceName());
-
         mInviter = getIntent().getIntExtra(INVITER_POS, -1);
         //String inviterName = getIntent().getStringExtra(INVITER_NAME);
         //if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
@@ -125,25 +122,6 @@ public class SetupActivityFrozen extends AppCompatActivity
         Message msg = new ACKSetupMessage(mInviter,ACKSetupMessage.ENTERED_SETUP_ACTIVITY);
         mBC.sendMessage(msg); // Send ACK
 
-        /*
-        // Change button color of inviter to greem
-        TextView nameField = null;
-        switch (mInviter) {
-            case 1:
-                b1.setImageResource(R.drawable.occupied_selector);
-                nameField = (TextView) findViewById(R.id.player1_name);
-                break;
-            case 2:
-                b2.setImageResource(R.drawable.occupied_selector);
-                nameField = (TextView) findViewById(R.id.player2_name);
-                break;
-            case 3:
-                b3.setImageResource(R.drawable.occupied_selector);
-                nameField = (TextView) findViewById(R.id.player3_name);
-                break;
-        }
-        nameField.setText(inviterName);
-        */
     }
 
     @Override
@@ -187,13 +165,13 @@ public class SetupActivityFrozen extends AppCompatActivity
         String inviterName = getIntent().getStringExtra(INVITER_NAME);
         if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
         nameField.setText(inviterName);
+        mGame.getPlayer(mInviter).setName(inviterName);
 
-        /*
-        Button b = (Button) findViewById(R.id.discover_btn);
-        b.setOnClickListener(this);
-        if (mBC.isDiscoverable()) b.setEnabled(false);
-        else b.setEnabled(true);
-        */
+        TextView ownName = (TextView)findViewById(R.id.player0_name);
+        String name = mBC.getDeviceName();
+        ownName.setText(name);
+        mGame.getPlayer(0).setName(name);
+        mGame.resetScores();
 
         CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
         ready.setChecked(false);
@@ -306,7 +284,7 @@ public class SetupActivityFrozen extends AppCompatActivity
      * Player is connected. Invite him into game
      * @param pos   Position where the other player is located
      */
-    public void onPlayerConnected(int pos, final String name)
+    public void onPlayerConnected(final int pos, final String name)
     {
         Log.d(LOGTAG,"Player " + name + " connected at pos " + pos);
         // Let progressbar disappear
@@ -341,6 +319,7 @@ public class SetupActivityFrozen extends AppCompatActivity
         if (b!= null) {
             final ImageButton button = b;
             final TextView nameF = nameField;
+            final int position = pos;
             try {
                 runOnUiThread(new Runnable() {
                     @Override
@@ -349,6 +328,7 @@ public class SetupActivityFrozen extends AppCompatActivity
                         button.setImageResource(R.drawable.occupied_selector);
                         button.setSelected(false);
                         nameF.setText(name);
+                        mGame.getPlayer(position).setName(name);
                     }
                 });
             } catch (NullPointerException e) {e.printStackTrace();}
@@ -424,6 +404,7 @@ public class SetupActivityFrozen extends AppCompatActivity
                 try {
                     b.setImageResource(R.drawable.vacant_selector);
                     nameF.setText("");
+                    mGame.getPlayer(position).setName(null);
                     CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
                     ready.setChecked(false);
                     ready.setEnabled(false);

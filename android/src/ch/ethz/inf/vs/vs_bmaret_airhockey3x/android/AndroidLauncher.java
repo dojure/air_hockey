@@ -3,6 +3,7 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android;
 		import android.os.Bundle;
 		import android.support.v4.app.FragmentActivity;
 		import android.support.v4.app.FragmentTransaction;
+		import android.util.Log;
 		import android.view.LayoutInflater;
 		import android.view.View;
 		import android.view.ViewGroup;
@@ -36,6 +37,5 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 
 	@Override
 	public void exit() {
-
 	}
 }

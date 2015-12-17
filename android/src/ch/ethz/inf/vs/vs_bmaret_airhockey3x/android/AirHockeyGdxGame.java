@@ -1,6 +1,7 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android;
 
 import android.os.SystemClock;
+import android.transition.Scene;
 import android.util.Log;
 
 import com.badlogic.gdx.ApplicationAdapter;
@@ -18,11 +19,16 @@ import com.badlogic.gdx.math.Vector3;
 
 import java.net.InetAddress;
 import java.util.Iterator;
+import java.util.Random;
 
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothCommListener;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ExitGameMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Message;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.PuckMovementMessage;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ScoreMessage;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Game;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
 
 public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcessor, BluetoothCommListener {
 
@@ -183,12 +189,18 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
                     float new_pos_y = pos.y + 24.6925639128062614951789755868289218508851629423944608498642f;
                     // Todo: Apply rotation, send message
 
+                    PuckMovementMessage pmsg = new PuckMovementMessage(1,new_pos_x,new_pos_y);
+                    mBC.sendMessage(pmsg);
+
                 } else {
                     // Send to right player
                     Log.d("","Send to right player");
                     float new_pos_x = pos.x + 2855.30743608719373850482102441317107814911483705760553915013f;
                     float new_pos_y = pos.y + 1620f;
                     // Todo: Apply rotation, send message
+
+                    PuckMovementMessage pmsg = new PuckMovementMessage(3,new_pos_x,new_pos_y);
+                    mBC.sendMessage(pmsg);
                 }
 
                 pos.set(w/2,h/2); // For testing
@@ -205,6 +217,7 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
     private OrthographicCamera camera;
 
     private BluetoothComm mBC;
+    private Game mGame;
 
     Vector3 tp3 = new Vector3();
 
@@ -212,6 +225,26 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
     @Override
     public void create() {
+
+        mBC = BluetoothComm.getInstance();
+        mBC.registerListener(this); // TODO: Deregister when leaving the game
+        mGame = Game.getInstance();
+
+        // TODO: delete this; This is only to test score messages
+        Random random = new Random();
+        new java.util.Timer().schedule(
+                new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        TuplePlayerScore t1 = new TuplePlayerScore(mGame.getPlayer(0).getName(),5);
+                        TuplePlayerScore t2 = new TuplePlayerScore(mGame.getPlayer(1).getName(),2);
+                        TuplePlayerScore t3 = new TuplePlayerScore(mGame.getPlayer(3).getName(),5);
+                        ScoreMessage smsg = new ScoreMessage(Message.BROADCAST,t1,t2,t3);
+                        mBC.sendMessage(smsg);
+                    }
+                },
+                5000 + random.nextInt(100)
+        );
 
 
         w = Gdx.graphics.getWidth();
@@ -298,6 +331,16 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
     @Override
     public void dispose() {
+
+        // TODO: This code goes into function that gets called when leaving the game. Right place here?
+        /*
+            Tell the others to exit too. We do it simple and stop the entire game as soon as one
+            leaves
+         */
+        ExitGameMessage emsg = new ExitGameMessage(Message.BROADCAST);
+        mBC.sendMessage(emsg);
+        mBC.unregisterListener(this);
+
     }
 
     private void update(float d) {
@@ -449,6 +492,28 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         return false;
     }
 
+
+    /**
+     * Set score and broadcast message to others
+     * @param player    Position of player who has made the goal
+     *
+     * We do it as follows: The last to touch the puck (other the ourselves) gets the point.
+     * If player 1
+     */
+    private void updateScore(int player)
+    {
+        // Local update
+        Player luckyOne = mGame.getPlayer(player);
+        luckyOne.setScore(luckyOne.getScore() + 1);
+        /*
+        TuplePlayerScore t1 = new TuplePlayerScore(mGame.getPlayer().getName(),5);
+        TuplePlayerScore t2 = new TuplePlayerScore(mGame.getPlayer(1).getName(),2);
+        TuplePlayerScore t3 = new TuplePlayerScore(mGame.getPlayer(3).getName(),5);
+        */
+        // Remote update
+        //ScoreMessage smsg = new ScoreMessage(Message.BROADCAST,);
+    }
+
     /**
      *
      * BluetoothComm callbacks
@@ -461,6 +526,9 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
      */
     public void onReceiveMessage(Message msg)
     {
+
+        // TODO: Everything
+
         String msgType = msg.getType();
         Log.d(LOGTAG, "Received message with type " + msgType);
         switch (msgType) {
@@ -473,15 +541,56 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
                 Log.d(LOGTAG,"remote position: x " + Float.toString(xpos) + " y "
                                 + Float.toString(ypos));
+                break;
+            case Message.SCORE_MSG:
 
-                // TODO: everything
+                ScoreMessage smsg = new ScoreMessage(msg);
+                String player0 = smsg.getPlayerName0();
+                String player1 = smsg.getPlayerName1();
+                String player2 = smsg.getPlayerName2();
+                int score0 = smsg.getPlayerScore0();
+                int score1 = smsg.getPlayerScore1();
+                int score2 = smsg.getPlayerScore2();
+                Log.d(LOGTAG,"Score of players");
+                Log.d(LOGTAG,player0 + ": " + score0);
+                Log.d(LOGTAG,player1 + ": " + score1);
+                Log.d(LOGTAG, player2 + ": " + score2);
+
+                // Save score
+                Player p0 = mGame.getPlayer(player0);
+                Player p1 = mGame.getPlayer(player1);
+                Player p2 = mGame.getPlayer(player2);
+
+                if(p0 != null)  p0.setScore(score0);
+                if(p1 != null)  p1.setScore(score1);
+                if(p2 != null)  p2.setScore(score2);
+
+
+                break;
+            case Message.EXIT_GAME_MSG:
+
+                Log.d(LOGTAG, "Going to exit game because player received a exit message from player "
+                        + Integer.toString(msg.getSender()));
+                // TODO: Exit game
+
 
                 break;
             default:
         }
     }
 
-    public void onPlayerDisconnected(int pos) {}
+    public void onPlayerDisconnected(int pos)
+    {
+        Log.d(LOGTAG,"Going to exit game because player " + Integer.toString(pos) + " was disconnected");
+
+        // Use this to exit game
+        ExitGameMessage emsg = new ExitGameMessage(Message.BROADCAST);
+        mBC.sendMessage(emsg);
+        mGame.getPlayer(pos).setName(null);
+        mGame.getPlayer(pos).setConnected(false);
+
+        // TODO: Exit game
+    }
 
 
     public void onPlayerConnected(int pos, String name) {Log.d(LOGTAG,"Called unused callback - onPlayerConnected" );}
