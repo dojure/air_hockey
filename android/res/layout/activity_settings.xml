@@ -16,13 +16,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/input_device_name"
+        android:inputType="textPersonName"
+        android:maxLength="10"
+        android:imeOptions="actionDone"
         android:layout_below="@id/text_device_name"/>
 
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:id="@+id/btn_save"
-        android:text="@string/save"/>
 
 </RelativeLayout>

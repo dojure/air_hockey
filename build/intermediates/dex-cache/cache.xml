@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="C:\Users\Rimle\Documents\GitHub\air_hockey\core\build\libs\core-1.0.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="1bc5f8bab64de02e832cab4dd5d19a8babb3d792">
+        <dex dex="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\pre-dexed\debug\core-1.0-7d508adbe484488cbbf6dd61d34b0d9deddd9ce0.jar" />
+    </item>
+    <item
+        jar="C:\Users\Rimle\.gradle\caches\modules-2\files-2.1\com.badlogicgames.gdx\gdx-box2d\1.7.1\fd23897393900f8f888222795e3229eff600fb3d\gdx-box2d-1.7.1.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="fd23897393900f8f888222795e3229eff600fb3d">
+        <dex dex="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\pre-dexed\debug\gdx-box2d-1.7.1-004d5ea929ebe78c90a270ae6df7a86ef496a8ee.jar" />
+    </item>
+    <item
+        jar="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\exploded-aar\com.android.support\support-v4\22.1.0\jars\libs\internal_impl-22.1.0.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="025cb89f2896c63200ff4c2e6c467a95691d880a">
+        <dex dex="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\pre-dexed\debug\internal_impl-22.1.0-eef198bd2389cc2c757982d83c52ef8c5d499455.jar" />
+    </item>
+    <item
+        jar="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\exploded-aar\com.android.support\support-v4\22.1.0\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="eeebabdfd8203f6ab639ccea4ffa1f20e1adee3a">
+        <dex dex="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\pre-dexed\debug\classes-506a26c74b337838b6999167e7f3c6e5a9e0bba4.jar" />
+    </item>
+    <item
+        jar="C:\Users\Rimle\.gradle\caches\modules-2\files-2.1\com.badlogicgames.gdx\gdx-backend-android\1.7.1\454871d4783564f17959bf9247660e7f56ecc4ab\gdx-backend-android-1.7.1.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="454871d4783564f17959bf9247660e7f56ecc4ab">
+        <dex dex="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\pre-dexed\debug\gdx-backend-android-1.7.1-e5cfe7e9b60bde96d5ed8ffa3f6d86fbefe13264.jar" />
+    </item>
+    <item
+        jar="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\exploded-aar\com.android.support\appcompat-v7\22.1.0\jars\classes.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="983e2f375504bc04def18e709c35192afe92e65f">
+        <dex dex="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\pre-dexed\debug\classes-9f7eb31d4b0c01cb758c4e831b74ead331ff10b3.jar" />
+    </item>
+    <item
+        jar="C:\Users\Rimle\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\22.1.0\support-annotations-22.1.0.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="281bc6c58ecb3644c23fbc5ee0452019f67b4d5d">
+        <dex dex="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\pre-dexed\debug\support-annotations-22.1.0-24996cb12ed2532b9490dabfab28865e2cb4bc40.jar" />
+    </item>
+    <item
+        jar="C:\Users\Rimle\.gradle\caches\modules-2\files-2.1\com.badlogicgames.gdx\gdx\1.7.1\2179cc613447c297623a4a6d2ba6692c3aaff804\gdx-1.7.1.jar"
+        jumboMode="false"
+        revision="23.0.2"
+        sha1="2179cc613447c297623a4a6d2ba6692c3aaff804">
+        <dex dex="C:\Users\Rimle\Documents\GitHub\air_hockey\android\build\intermediates\pre-dexed\debug\gdx-1.7.1-99e436453d7b4f9eb0ae2e8c526274cfd7c950e9.jar" />
+    </item>
+
+</items>
