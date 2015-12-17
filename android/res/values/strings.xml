@@ -23,12 +23,20 @@
 
     <string name="no_name">anonymous</string>
 
-    <!-- Connection lost -->
+    <!-- Connection lost dialog -->
     <string name="connection_lost_title">Connection lost</string>
     <string name="connection_lost_message1">The connection to </string>
-    <string name="connection_lost_message2"> was lost. Please try again.</string>
-    <string name="connection_lost_message3"> was lost. Wait for a new invitation or create a game.</string>
+    <string name="connection_lost_message2">\u0020was lost. Please try again.</string>
+    <string name="connection_lost_message3">\u0020was lost. Wait for a new invitation or create a game.</string>
+
+    <!-- Invitation dialog -->
     <string name="invitation_title">Invitation</string>
-    <string name="invitation_txt"> wants to invite you to a game. Do you want to join?</string>
+    <string name="invitation_txt">\u0020wants to invite you to a game. Do you want to join?</string>
+
+    <!-- Already invited dialog -->
+    <string name="already_invited_title">Sorry</string>
+    <string name="already_invited_message1">The player\u0020</string>
+    <string name="already_invited_message2">\u0020has already been invited. Please select another player to
+    join the game.</string>
 
 </resources>

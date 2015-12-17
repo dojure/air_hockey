@@ -11,10 +11,12 @@ import android.util.Log;
 public class Player {
 
     private final static String LOGTAG = "Player";
+    public final String defaultName = "The Name";
 
     private final int mPosition;
     private boolean mReady = false;
     private boolean mConnected = false; // TODO: Must be updated when connection lost
+    private String mName = defaultName;
 
     public Player(int pos)
     {
@@ -28,5 +30,13 @@ public class Player {
     public void setConnected(boolean connected)
     {
         Log.d(LOGTAG,"Player " + Integer.toString(mPosition) + " is now " + Boolean.toString(connected) + " connected");
-        mConnected = connected;}
+        mConnected = connected;
+    }
+
+    public void setName(String name)
+    {
+        if (name == null) mName = defaultName;
+        else mName = name;
+    }
+    public String getName() {return mName;}
 }

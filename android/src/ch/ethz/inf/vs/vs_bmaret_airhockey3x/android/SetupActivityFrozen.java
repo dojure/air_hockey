@@ -98,8 +98,8 @@ public class SetupActivityFrozen extends AppCompatActivity
         b.setOnClickListener(this);
         b = (Button) findViewById(R.id.test_msg_btn3);
         b.setOnClickListener(this);
-        b = (Button) findViewById(R.id.discover_btn);
-        b.setOnClickListener(this);
+        CheckBox cbD = (CheckBox) findViewById(R.id.discoverable_ckbox);
+        cbD.setOnClickListener(this);
 
         initGame(3);
 
@@ -152,6 +152,10 @@ public class SetupActivityFrozen extends AppCompatActivity
 
         mBC.registerListener(this);
 
+        CheckBox cb = (CheckBox) findViewById(R.id.discoverable_ckbox);
+        if (mBC.isDiscoverable()) cb.setChecked(true);
+        else cb.setChecked(false);
+
         ImageButton b1 = (ImageButton) findViewById(R.id.player1_btn);
         mImageButtons[0] = b1;
         b1.setOnClickListener(this);
@@ -182,10 +186,12 @@ public class SetupActivityFrozen extends AppCompatActivity
         if (inviterName == null || inviterName.equals("")) inviterName = getString(R.string.no_name);
         nameField.setText(inviterName);
 
+        /*
         Button b = (Button) findViewById(R.id.discover_btn);
         b.setOnClickListener(this);
         if (mBC.isDiscoverable()) b.setEnabled(false);
         else b.setEnabled(true);
+        */
 
         CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
         ready.setChecked(false);
@@ -220,9 +226,9 @@ public class SetupActivityFrozen extends AppCompatActivity
                 break;
             case R.id.player3_btn:
                 break;
-            case R.id.discover_btn:
-                mBC.discoverable(true);
-                b.setEnabled(false);
+            case R.id.discoverable_ckbox:
+                if (((CheckBox) b).isChecked()) mBC.discoverable(true);
+                else mBC.discoverable(false);
                 break;
             case R.id.ready_ckbox:
                 ReadyMessage msg = new ReadyMessage(Message.BROADCAST);
@@ -253,8 +259,8 @@ public class SetupActivityFrozen extends AppCompatActivity
      */
     public void onNotDiscoverable()
     {
-        Button b = (Button) findViewById(R.id.discover_btn);
-        b.setEnabled(true);
+        CheckBox cbD = (CheckBox) findViewById(R.id.discoverable_ckbox);
+        cbD.setChecked(false);
     }
 
     public void onDeviceFound(String name, String address) {Log.d(LOGTAG, "Unused callback called");}
@@ -294,6 +300,7 @@ public class SetupActivityFrozen extends AppCompatActivity
         });
 
         mGame.getPlayer(pos).setConnected(true);
+        mGame.getPlayer(pos).setName(name);
         ImageButton b = null;
         TextView nameField = null;
         switch (pos) {
@@ -350,6 +357,7 @@ public class SetupActivityFrozen extends AppCompatActivity
     {
         final int position = pos;
         mGame.getPlayer(pos).setConnected(false);
+        mGame.getPlayer(pos).setName(null);
 
         ImageButton button = null;
         TextView nameField = null;

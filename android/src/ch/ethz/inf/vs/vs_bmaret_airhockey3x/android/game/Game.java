@@ -80,4 +80,18 @@ public class Game {
         }
         return ready;
     }
+
+    /**
+     * Checks whether there is currently a player whith given name in the game.
+     * @param name  Name to check
+     * @return      Whether there is said player or not
+     */
+    public boolean existsName(String name)
+    {
+        boolean res = false;
+        for (Player p : mPlayers.values()) {
+            if (p.getName().equals(name)) res = true;
+        }
+        return res;
+    }
 }

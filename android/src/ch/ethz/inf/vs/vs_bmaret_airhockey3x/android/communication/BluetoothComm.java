@@ -206,6 +206,8 @@ public class BluetoothComm implements BluetoothServicesListener {
     {
         // TODO: Cleanup when done -> maybe something about the bluetooth callback
         // Also figure out a good place to call this
+
+        mCurrentPlayerPos = -1;
         mBS.reset();
     }
 
@@ -234,12 +236,13 @@ public class BluetoothComm implements BluetoothServicesListener {
             listen(false); // Stop listening if were listening
             Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            i.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            i.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 60);
             mContext.startActivity(i);
             listen(true); // Start again
         } else if (!enable && mBluetoothAdapter.getScanMode() == BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
 
             // We just leave it discoverable
+
             /*
             Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -267,10 +270,6 @@ public class BluetoothComm implements BluetoothServicesListener {
         Log.d(LOGTAG,"Invite player " + Integer.toString(playerPos) + " entry " + entry);
         if(playerPos >= 0 && playerPos <= 3) {
             mCurrentPlayerPos = playerPos;
-
-            // TODO: Check whether this player was already invited and has a seat in the game
-            // It should not be possible that a device occupies 2 seats in the game
-
             for (BluetoothDevice d : mDevices) {
                 //String compare = d.getName() + " " + d.getAddress();
                 //if (compare.equals(entry)) {
@@ -279,6 +278,7 @@ public class BluetoothComm implements BluetoothServicesListener {
                     mBS.connect(d.getAddress(), mCurrentPlayerPos);
                     if (mListener != null)  mListener.onStartConnecting();
                     else Log.d(LOGTAG,"mListener was null");
+                    break; // Exit loop because we found who we wanted
                 }
             }
         } else Log.d(LOGTAG, "Tried to get paired device for null-Player");

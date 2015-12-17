@@ -35,12 +35,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         b = (Button) findViewById(R.id.settings_btn);
         b.setOnClickListener(this);
 
-        CheckBox cb = (CheckBox) findViewById(R.id.join_check_box);
-        cb.setOnClickListener(this);
-
         mBC = BluetoothComm.getInstance();
         mBC.init(this, getApplicationContext()); // Must only be done once in entire app
         mBC.listen(true); // Start listening for incoming connections
+
+        CheckBox cb = (CheckBox) findViewById(R.id.join_check_box);
+        cb.setOnClickListener(this);
     }
 
     @Override
@@ -49,6 +49,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onResume();
         Log.d(LOGTAG, "onResume");
         mBC.registerListener(this);
+
+        CheckBox cb = (CheckBox) findViewById(R.id.join_check_box);
+        if (mBC.isDiscoverable()) cb.setChecked(true);
+        else cb.setChecked(false);
 
         // Make buttons appear next to each other when in landscape -> Important if we start off with
         // Landscape
@@ -180,6 +184,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onStartConnecting() {Log.d(LOGTAG, "Unused callback called - onStartConnecting");}
     public void onReceiveMessage(final Message msg) {Log.d(LOGTAG, "Unused callback called - onReceiveMessage");}
     public void onScanDone() {Log.d(LOGTAG, "Unused callback called - onScanDone");}
-    public void onNotDiscoverable() {Log.d(LOGTAG, "Unused callback called - onNotDiscoverable");}
+    public void onNotDiscoverable()
+    {
+        CheckBox disc = (CheckBox) findViewById(R.id.join_check_box);
+        disc.setChecked(false);
+    }
 }
 

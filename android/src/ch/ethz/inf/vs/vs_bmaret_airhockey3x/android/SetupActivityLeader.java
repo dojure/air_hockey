@@ -121,9 +121,16 @@ public class SetupActivityLeader extends AppCompatActivity
                             // Invite other player
                             Log.d(LOGTAG, "Check onItemClickListener of List");
                             scan(false); // Stop scan to make it faster
-                            mBC.invite(mCurrentPlayer.getPosition(), entry);
-                        } else Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
 
+                            // Invite player if not already invited
+                            if (!mGame.existsName(entry)) {
+                                mBC.invite(mCurrentPlayer.getPosition(), entry);
+                            } else {
+                                Log.d(LOGTAG,"There is already a player with name " + entry +
+                                        " -> not going to invite again");
+                                showDialog(ALREADY_INVITED_DIALOG,entry);
+                            }
+                        } else Log.d(LOGTAG, "mCurrentPlayer is null - cannot invite");
                     }
 
                 });
@@ -140,10 +147,7 @@ public class SetupActivityLeader extends AppCompatActivity
         ownName.setText(mBC.getDeviceName());
         */
 
-        scan(true); // Scan only if leader
-
-        //addPairedDevicesToList();
-
+        scan(true); // Scan for devices
         setEnableListView(false);
     }
 
@@ -324,6 +328,9 @@ public class SetupActivityLeader extends AppCompatActivity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                // Deselect all buttons
+                for (ImageButton ib : mImageButtons) ib.setSelected(false);
+                setEnableListView(false); // Disable list
                 ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
                 bar.setVisibility(View.GONE);
             }
@@ -331,6 +338,7 @@ public class SetupActivityLeader extends AppCompatActivity
 
         // Send invite message to connected player (if mActive)
         mGame.getPlayer(pos).setConnected(true);
+        mGame.getPlayer(pos).setName(name);
         ImageButton b = null;
         TextView nameField = null;
         Message msg = new InviteMessage(pos);
@@ -379,11 +387,11 @@ public class SetupActivityLeader extends AppCompatActivity
         }
     }
 
-    public void onPlayerDisconnected(int pos)
+    public void onPlayerDisconnected(final int pos)
     {
         final int position = pos;
         mGame.getPlayer(pos).setConnected(false);
-
+        mGame.getPlayer(pos).setName(null);
 
         // TODO: Think about this
         mReadyCounter = Math.max(0,mReadyCounter -1);
@@ -417,18 +425,8 @@ public class SetupActivityLeader extends AppCompatActivity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                AlertDialog alertDialog = new AlertDialog.Builder(SetupActivityLeader.this).create();
-                alertDialog.setTitle(R.string.connection_lost_title);
-                String errorMsg = getString(R.string.connection_lost_message1) + " player "
-                        + Integer.toString(position) + getString(R.string.connection_lost_message2);
-                alertDialog.setMessage(errorMsg);
-                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        });
-                alertDialog.show();
+
+                showDialog(CONNECTION_LOST_DIALOG,mGame.getPlayer(position).getName());
 
                 try {
                     b.setImageResource(R.drawable.vacant_selector);
@@ -534,44 +532,53 @@ public class SetupActivityLeader extends AppCompatActivity
         }
     }
 
-    /**
-     * Populate list with paired devices
-     */
-//    private void addPairedDevicesToList()
-//    {
-//        List<String> entries = mBC.getPairedDeviceNamesAdresses();
-//        if (mAdapter == null) {
-//            // First call -> initialize Listadapter
-//            mAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,entries);
-//            mDevicesListView.setAdapter(mAdapter);
-//        } else {
-//            // Use Listadapter which is already initialized
-//            for (String entry : entries) {
-//                mAdapter.add(entry);
-//
-//            }
-//            mAdapter.notifyDataSetChanged();
-//        }
-//    }
-//
-//    //test method
-//    private void updateList(){
-//        List<String> entries = mBC.getPairedDeviceNamesAdresses();
-//        for(String entry : entries){
-//            mAdapter.add(entry);
-//        }
-//        mAdapter.notifyDataSetChanged();
-//    }
-
-    // TODO: Shows dialog where user can decide how many players want to participate
-    private void showDialog()
+    private final int PLACEHOLDER_DIALOG = 0;
+    private final int ALREADY_INVITED_DIALOG = 1;
+    private final int CONNECTION_LOST_DIALOG = 2;
+    private void showDialog(int dialogId, String arg)
     {
-        AlertDialog.Builder dialog  = new AlertDialog.Builder(this);
-        dialog.setMessage(getString(R.string.pl_holder_no_participants));
-        dialog.setTitle("PLACEHODLER");
-        dialog.setPositiveButton("OK", null);
-        dialog.setCancelable(true);
-        dialog.create().show();
+        switch (dialogId) {
+            case PLACEHOLDER_DIALOG:
+                AlertDialog.Builder dialog  = new AlertDialog.Builder(this);
+                dialog.setMessage(getString(R.string.pl_holder_no_participants));
+                dialog.setTitle("PLACEHODLER");
+                dialog.setPositiveButton("OK", null);
+                dialog.setCancelable(true);
+                dialog.create().show();
+                break;
+            case ALREADY_INVITED_DIALOG:
+                AlertDialog alertDialog0 = new AlertDialog.Builder(SetupActivityLeader.this).create();
+                alertDialog0.setTitle(getString(R.string.already_invited_title));
+                alertDialog0.setMessage(getString(R.string.already_invited_message1) + arg +
+                        getString(R.string.already_invited_message2));
+                alertDialog0.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Deselect all buttons
+                                for (ImageButton ib : mImageButtons) ib.setSelected(false);
+                                setEnableListView(false); // Disable list
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog0.show();
+                break;
+            case CONNECTION_LOST_DIALOG:
+                AlertDialog alertDialog1 = new AlertDialog.Builder(SetupActivityLeader.this).create();
+                alertDialog1.setTitle(R.string.connection_lost_title);
+                String errorMsg = getString(R.string.connection_lost_message1) + arg + getString(R.string.connection_lost_message2);
+                alertDialog1.setMessage(errorMsg);
+                alertDialog1.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Deselect all buttons
+                                for (ImageButton ib : mImageButtons) ib.setSelected(false);
+                                setEnableListView(false); // Disable list
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog1.show();
+                break;
+        }
     }
 
     /**
@@ -592,6 +599,7 @@ public class SetupActivityLeader extends AppCompatActivity
                 alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
+                                setEnableListView(false);
                                 dialog.dismiss();
                             }
                         });
@@ -632,8 +640,6 @@ public class SetupActivityLeader extends AppCompatActivity
             Log.d(LOGTAG, "clear device list");
             mAdapter.clear();
         }
-
-
         mBC.scan(enable);
     }
 
