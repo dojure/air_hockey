@@ -1,7 +1,6 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android;
 
 import android.os.SystemClock;
-import android.transition.Scene;
 import android.util.Log;
 
 import com.badlogic.gdx.ApplicationAdapter;
@@ -29,6 +28,44 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.PuckMo
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ScoreMessage;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Game;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
+
+
+/**
+ *
+ * Notes for etienne
+ *
+ * 1. We created a PuckMovementMessage to inform the other player about his puck. Currently there are
+ * only two float values available for the position (x,y). If you need another two for velocity add them
+ * the same way as the position values
+ *
+ * 2. Scores: We store the scores in the players which are in the mGame instance. Use updateScore()
+ * to update the scores. It updates the local value and broadcasts a message to all others. We thought it
+ * best that just the player who sent the puck gets one point. There are no "eigengoal" during the game.
+ * -> What to do when we start and make an eigengoal; who gets the point?
+ *
+ * 3. Could not test if it works to leave the game and reenter, because we dont now how to /**
+ *
+ * Notes for etienne
+ *
+ * 1. We created a PuckMovementMessage to inform the other player about his puck. Currently there are
+ * only two float values available for the position (x,y). If you need another two for velocity add them
+ * the same way as the position values
+ *
+ * 2. Scores: We store the scores in the players which are in the mGame instance. Use updateScore()
+ * to update the scores. It updates the local value and broadcasts a message to all others. We thought it
+ * best that just the player who sent the puck gets one point. There are no "eigengoal" during the game.
+ * -> What to do when we start and make an eigengoal; who gets the point?
+ *
+ * 3. Could not test if it works to leave the game and reenter, because we didnt know how to leave the game in
+ * code (for example in onPlayerDisconnected() or when received an exitGame message)
+ *
+ * 4. As soon as one leaves the game all should leave. We broadcast an exit_game message in dispose()
+ * and in onPlayerDisconnected()
+ *
+ * 5. Dont forget to remove buttons in setupactivities
+ */
+
+
 
 public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcessor, BluetoothCommListener {
 
@@ -243,7 +280,7 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
                         mBC.sendMessage(smsg);
                     }
                 },
-                5000 + random.nextInt(100)
+                5000 + random.nextInt(200)
         );
 
 
@@ -505,13 +542,18 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         // Local update
         Player luckyOne = mGame.getPlayer(player);
         luckyOne.setScore(luckyOne.getScore() + 1);
-        /*
-        TuplePlayerScore t1 = new TuplePlayerScore(mGame.getPlayer().getName(),5);
-        TuplePlayerScore t2 = new TuplePlayerScore(mGame.getPlayer(1).getName(),2);
-        TuplePlayerScore t3 = new TuplePlayerScore(mGame.getPlayer(3).getName(),5);
-        */
+
         // Remote update
-        //ScoreMessage smsg = new ScoreMessage(Message.BROADCAST,);
+        Player p0 = mGame.getPlayer(0);
+        Player p1 = mGame.getPlayer(1);
+        Player p3 = mGame.getPlayer(3);
+
+        TuplePlayerScore t1 = new TuplePlayerScore(p0.getName(),p0.getScore());
+        TuplePlayerScore t2 = new TuplePlayerScore(p1.getName(),p1.getScore());
+        TuplePlayerScore t3 = new TuplePlayerScore(p3.getName(),p3.getScore());
+
+        ScoreMessage smsg = new ScoreMessage(Message.BROADCAST,t1,t2,t3);
+        mBC.sendMessage(smsg);
     }
 
     /**
