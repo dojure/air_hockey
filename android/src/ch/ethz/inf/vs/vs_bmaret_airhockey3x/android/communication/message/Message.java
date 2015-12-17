@@ -1,5 +1,7 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -13,6 +15,9 @@ import java.io.UnsupportedEncodingException;
  * Define your type in here.
  */
 public class Message {
+
+    private final String LOGTAG = "Message";
+
 
     // Define types
     public final static String TEST_MSG = "test";
@@ -105,6 +110,12 @@ public class Message {
     {
         mReceiver = receiver;
         mSender = 4 - receiver;
+        try {
+            mHeader.put(RECEIVER_KEY,mReceiver);
+            mHeader.put(SENDER_KEY,mSender);
+            mMsg.put(HEADER_KEY,mHeader);
+        } catch (JSONException e) {e.printStackTrace();}
+
     }
     public int getReceiver() {return mReceiver;}
     public int getSender() {return mSender;}

@@ -67,7 +67,9 @@ public class SetupActivityFrozen extends AppCompatActivity
     private int mInviter = -1; // The player which went first into the setup screen (only not -1 if !mActive)
     private BluetoothComm mBC;
     private ImageButton[] mImageButtons = new ImageButton[3];
-    private int mReadyCounter = 0;
+    //private int mReadyCounter = 0;
+    private boolean[] mReadyCounters = new boolean[4];
+
 
 
     @Override
@@ -201,10 +203,20 @@ public class SetupActivityFrozen extends AppCompatActivity
     protected void onDestroy()
     {
         super.onDestroy();
+        Log.d(LOGTAG, "onDestroy");
         mBC.stop();
-        mBC.unregisterListener(this);
 
         // TODO: More cleanup ?
+    }
+
+    @Override
+    protected void onStop()
+    {
+        super.onStop();
+        Log.d(LOGTAG, "onStop");
+        mBC.unregisterListener(this);
+
+        for (int i = 0; i < 4; i++) setReady(false,i);
     }
 
     /**
@@ -231,9 +243,16 @@ public class SetupActivityFrozen extends AppCompatActivity
                 else mBC.discoverable(false);
                 break;
             case R.id.ready_ckbox:
-                ReadyMessage msg = new ReadyMessage(Message.BROADCAST);
+                ReadyMessage msg;
+                if (((CheckBox) b).isChecked()) {
+                    setReady(true,0);
+                    msg = new ReadyMessage(Message.BROADCAST, true);
+                }
+                else {
+                    setReady(false,0);
+                    msg = new ReadyMessage(Message.BROADCAST, false);
+                }
                 mBC.sendMessage(msg);
-                incrementReadyCounter();
                 break;
 
             // DEBUG - Send test messages
@@ -424,7 +443,7 @@ public class SetupActivityFrozen extends AppCompatActivity
             return;
         }
         String msgType = msg.getType();
-        Log.d(LOGTAG,"Received message with type " + msgType);
+        Log.d(LOGTAG, "Received message with type " + msgType);
         switch (msgType) {
             case Message.TEST_MSG:
                 showMessage(msg);
@@ -434,7 +453,8 @@ public class SetupActivityFrozen extends AppCompatActivity
                 handleAckMessage(ack);
                 break;
             case Message.READY_MSG:
-                incrementReadyCounter();
+                ReadyMessage rmsg = new ReadyMessage(msg);
+                setReady(rmsg.getReady(), rmsg.getSender());
                 break;
             case Message.INVITE_MSG:
             case Message.INVITE_REMOTE_MSG:
@@ -442,6 +462,8 @@ public class SetupActivityFrozen extends AppCompatActivity
         }
 
     }
+
+    public void onBluetoothNotSupported() {Log.d(LOGTAG,"Called unused callback onBluetoothNotSupported");}
 
 
     /**
@@ -451,10 +473,16 @@ public class SetupActivityFrozen extends AppCompatActivity
      */
 
 
-    private void incrementReadyCounter()
+    private void setReady(boolean ready, int pos)
     {
-        mReadyCounter++;
-        if (mReadyCounter == 3) { // TODO: Change for more players
+        //mReadyCounter++;
+        mReadyCounters[pos] = ready;
+        //Log.d(LOGTAG,"Increment ready counter is now " + mReadyCounter);
+        int readyPlayers = 0; // We consider ourselves as connected
+        for (boolean b : mReadyCounters) {
+            if (b) readyPlayers++;
+        }
+        if (readyPlayers == 3) { // TODO: Change for more players
             Intent i2 = new Intent(this, AndroidLauncher.class);
             startActivity(i2);
         }

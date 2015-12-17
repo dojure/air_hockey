@@ -25,7 +25,6 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Remote
  * related state during all the activities.
  *
  * TODO s (in addition the others already in the code)
- * 1. Think about the cleanup. When to call .stop() and what must be done?
  * 2. Could change the names (for the list) to only the name of the device rather than the name and
  *      the address
  * 3. Test pairing from within the application. For some devices it works and for some not.. Maybe
@@ -115,12 +114,11 @@ public class BluetoothComm implements BluetoothServicesListener {
                 // TODO: Exit gracefully if Bluetooth is not supported
                 // TODO: If Bluetooth is just not enabled, prompt a dialog to enable it
 
+                mListener.onBluetoothNotSupported();
+
                 //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             }
-
-//        //test clear devices
-//        mDevices.clear();
 
             // Register bluetooth callback
             IntentFilter filter = new IntentFilter();

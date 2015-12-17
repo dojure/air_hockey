@@ -18,5 +18,6 @@ public interface BluetoothCommListener {
     void onStartConnecting();               // As soon as start connecting
     void onScanDone();                      // When bluetooth discovery is done
     void onNotDiscoverable();               // When discoverability expired
+    void onBluetoothNotSupported();         // When bluetooth not supported
 
 }

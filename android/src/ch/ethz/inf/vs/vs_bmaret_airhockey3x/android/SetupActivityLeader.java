@@ -74,9 +74,10 @@ public class SetupActivityLeader extends AppCompatActivity
     private Player mCurrentPlayer = null;
     private boolean[] mSetupEnteredAcks = new boolean[4];
     private boolean[] mSetupAllConnectedAcks = new boolean[4];
+    private boolean[] mReadyCounters = new boolean[4];
     //private int mSetupEnteredACKReceived = 0;
     //private int mSetupAllConnectedAcksReceived = 0;
-    private int mReadyCounter = 0;
+    //private int mReadyCounter = 0;
 
 
     @Override
@@ -105,6 +106,9 @@ public class SetupActivityLeader extends AppCompatActivity
         b = (Button) findViewById(R.id.test_msg_btn3);
         b.setOnClickListener(this);
         b = (Button) findViewById(R.id.scan_button);
+        b.setOnClickListener(this);
+
+        b = (Button) findViewById(R.id.broadcast_button);
         b.setOnClickListener(this);
 
         // TODO: Ask user how many players -> only when want to do more than 3
@@ -159,25 +163,36 @@ public class SetupActivityLeader extends AppCompatActivity
         TextView ownName = (TextView) findViewById(R.id.player0_name);
         ownName.setText(mBC.getDeviceName());
 
+        mBC.registerListener(this);
+
         CheckBox ready = (CheckBox) findViewById(R.id.ready_ckbox);
         ready.setChecked(false);
     }
 
     @Override
-    protected void onDestroy() {
+    protected void onDestroy()
+    {
         super.onDestroy();
         Log.d(LOGTAG, "onDestroy");
         mBC.stop();
-        mBC.unregisterListener(this);
-        scan(false);
 
         // TODO: More cleanup ?
     }
 
+    @Override
+    protected void onStop()
+    {
+        super.onStop();
+        Log.d(LOGTAG, "onDestroy");
+        scan(false);
+        mBC.unregisterListener(this);
+
+        for (int i = 0; i < 4; i++) setReady(false,i);
+    }
+
 
     @Override
-    public boolean onNavigateUp()
-    {
+    public boolean onNavigateUp() {
         Log.d(LOGTAG, "onNavigateUo()");
         mBC.stop();
         return super.onNavigateUp();
@@ -225,8 +240,15 @@ public class SetupActivityLeader extends AppCompatActivity
                     scan(true);
                 break;
             case R.id.ready_ckbox:
-                incrementReadyCounter();
-                ReadyMessage msg = new ReadyMessage(Message.BROADCAST);
+                ReadyMessage msg;
+                if (((CheckBox) b).isChecked()) {
+                    setReady(true, 0);
+                    msg = new ReadyMessage(Message.BROADCAST, true);
+                }
+                else {
+                    setReady(false,0);
+                    msg = new ReadyMessage(Message.BROADCAST, false);
+                }
                 mBC.sendMessage(msg);
                 break;
 
@@ -238,6 +260,10 @@ public class SetupActivityLeader extends AppCompatActivity
             case R.id.test_msg_btn3:
                 Message msg1 = new TestMessage(3);
                 mBC.sendMessage(msg1);
+                break;
+            case R.id.broadcast_button:
+                Message msg2 = new TestMessage(Message.BROADCAST);
+                mBC.sendMessage(msg2);
                 break;
         }
         // Check if no button is selected -> need to disable list if none is and invalidate current player
@@ -394,11 +420,12 @@ public class SetupActivityLeader extends AppCompatActivity
         mGame.getPlayer(pos).setName(null);
 
         // TODO: Think about this
-        mReadyCounter = Math.max(0,mReadyCounter -1);
+        //mReadyCounter = Math.max(0,mReadyCounter -1);
         //mSetupAllConnectedAcksReceived = Math.max(0,mSetupAllConnectedAcksReceived -1);
         //mSetupEnteredACKReceived = Math.max(0,mSetupEnteredACKReceived -1);
         mSetupAllConnectedAcks[pos] = false;
         mSetupEnteredAcks[pos] = false;
+        mReadyCounters[pos] = false;
 
         ImageButton button = null;
         TextView nameField = null;
@@ -463,7 +490,8 @@ public class SetupActivityLeader extends AppCompatActivity
                 handleAckMessage(ack);
                 break;
             case Message.READY_MSG:
-                incrementReadyCounter();
+                ReadyMessage rmsg = new ReadyMessage(msg);
+                setReady(rmsg.getReady(), rmsg.getSender());
                 break;
             case Message.INVITE_MSG:
             case Message.INVITE_REMOTE_MSG:
@@ -472,7 +500,7 @@ public class SetupActivityLeader extends AppCompatActivity
 
     }
 
-
+    public void onBluetoothNotSupported() {Log.d(LOGTAG,"Called unused callback onBluetoothNotSupported");}
 
     /**
      *
@@ -480,10 +508,17 @@ public class SetupActivityLeader extends AppCompatActivity
      *
      */
 
-    private void incrementReadyCounter()
+    private void setReady(boolean ready, int pos)
     {
-        mReadyCounter++;
-        if (mReadyCounter == 3) { // TODO: Change for more players
+        //mReadyCounter++;
+        mReadyCounters[pos] = ready;
+        //Log.d(LOGTAG,"Increment ready counter is now " + mReadyCounter);
+        int readyPlayers = 0; // We consider ourselves as connected
+        for (boolean b : mReadyCounters) {
+            if (b) readyPlayers++;
+        }
+        Log.d(LOGTAG,Integer.toString(readyPlayers) + " players are ready");
+        if (readyPlayers == 3) { // TODO: Change for more players
             Intent i2 = new Intent(this, AndroidLauncher.class);
             startActivity(i2);
         }

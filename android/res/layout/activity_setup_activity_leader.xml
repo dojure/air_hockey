@@ -181,5 +181,14 @@
             android:visibility="gone"
             android:indeterminate="true" />
 
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BR"
+            android:id="@+id/broadcast_button"
+            android:layout_above="@+id/player0_name"
+            android:layout_toEndOf="@+id/player0_btn" />
+
     </RelativeLayout>
 </LinearLayout>

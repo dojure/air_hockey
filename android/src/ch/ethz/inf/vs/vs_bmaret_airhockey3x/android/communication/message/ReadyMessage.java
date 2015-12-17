@@ -8,12 +8,19 @@ import org.json.JSONObject;
  */
 public class ReadyMessage extends Message {
 
-    public ReadyMessage(int receiverPos)
+    private final static String READY_KEY = "ready";
+
+    private boolean mReady;
+
+    public ReadyMessage(int receiverPos, boolean ready)
     {
         super(receiverPos, Message.READY_MSG);
 
+        mReady = ready;
+
         try {
             mBody = new JSONObject();
+            mBody.put(READY_KEY, mReady);
             mMsg.put(BODY_KEY,mBody);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -26,6 +33,9 @@ public class ReadyMessage extends Message {
         try {
             mBody = new JSONObject();
             mBody = mMsg.getJSONObject(BODY_KEY);
+            mReady = mBody.getBoolean(READY_KEY);
         } catch (JSONException e) {e.printStackTrace();}
     }
+
+    public boolean getReady() {return mReady;}
 }

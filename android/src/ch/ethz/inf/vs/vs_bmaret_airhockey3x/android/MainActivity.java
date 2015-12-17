@@ -1,6 +1,7 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android;
 
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -157,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onPlayerDisconnected(int pos)
     {
         final int position = pos;
-        Log.d(LOGTAG,"Connection lost");
+        Log.d(LOGTAG, "Connection lost");
         /*
         runOnUiThread(new Runnable() {
             @Override
@@ -188,6 +189,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         CheckBox disc = (CheckBox) findViewById(R.id.join_check_box);
         disc.setChecked(false);
+    }
+    public void onBluetoothNotSupported()
+    {
+        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        startActivityForResult(enableBtIntent, 9);
     }
 }
 

@@ -428,7 +428,7 @@ public class SetupActivity extends AppCompatActivity
     }
 
     public void onPlayerDisconnected(int pos) {Log.d(LOGTAG,"Called unused callback");}
-
+    public void onBluetoothNotSupported() {Log.d(LOGTAG,"Called unused callback onBluetoothNotSupported");}
 
 
 

@@ -24,7 +24,7 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
     public static final int PHYSICS_TIMESTEP = 10; // Time in milliseconds between physics updates
 
     public static final boolean GRAVITY_ON = false; // For testing purposes only
-    public static final boolean CEILING_ON = true; // Does the puck collide with ceiling? (testing)
+    public static final boolean CEILING_ON = false; // Does the puck collide with ceiling? (testing)
 
     public static final float PUCK_RADIUS = 75; // I think 75 would be a good number here
     public static final float MALLET_RADIUS = 90; // And 90 pixels here
@@ -33,6 +33,10 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
     public static final float GOAL_SIZE = 550; // Goal width in pixels
     public static final float RAIL_THICKNESS = 20; // Rail thickness in pixels
+
+    public static final int RAIL_COLOR = Color.rgba8888(0, 1, 0, 1);
+
+    public static final int NUM_PLAYERS = 3;
 
 
     SpriteBatch batch;
@@ -58,6 +62,7 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         boolean dragging;
         boolean previouslyDragging;
         boolean collided = false;
+        boolean messageSent = false;
 
         public Circle(Vector2 p, Vector2 v) {
             pos = p;
@@ -150,6 +155,39 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
                     }
                 }
             }
+
+            // Process goals
+            if (!isMallet && pos.y < - radius) {
+                // Todo: Register goals
+                pos.set(w/2,h/2);
+                vel.set(0, 0.000001f);
+            }
+
+            // Process exiting the screen
+            if (!isMallet && pos.y > h + radius && !messageSent) {
+
+                Log.d("Exiting screen", "a");
+
+                if (pos.x+((2743*scaleFactor-pos.y)/vel.y)*vel.x < w/2){
+                    // Send to left player
+                    Log.d("","Send to left player");
+                    float new_pos_x = pos.x + 3282.76877526612220178634848784563747226509304365796540293357f;
+                    float new_pos_y = pos.y + 24.6925639128062614951789755868289218508851629423944608498642f;
+                    // Todo: Apply rotation, send message
+
+                } else {
+                    // Send to right player
+                    Log.d("","Send to right player");
+                    float new_pos_x = pos.x + 2855.30743608719373850482102441317107814911483705760553915013f;
+                    float new_pos_y = pos.y + 1620f;
+                    // Todo: Apply rotation, send message
+                }
+
+                pos.set(w/2,h/2); // For testing
+                vel.set(0, 0.000001f);
+
+                //messageSent = true;
+            }
         }
     }
 
@@ -194,7 +232,7 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
         // Prepare our rail textures
         pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.rgba8888(1, 1, 1, 1));
+        pixmap.setColor(RAIL_COLOR);
         pixmap.fill();
         rail_img = new Texture(pixmap);
 
@@ -295,8 +333,8 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
         // This whole next section is to resolve collisions between the puck and the mallet
         if (mallet.pos.dst(puck.pos) < mallet.radius + puck.radius) {
-            Log.d("Puck oldVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
-            Log.d("Mallet oldVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
+//            Log.d("Puck oldVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
+//            Log.d("Mallet oldVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
 
             // Turn back time to when they weren't intersecting
             double backTimeRoot = 0.5 * Math.sqrt(4 * Math.pow(puck.pos.x * (puck.vel.x - mallet.vel.x) +
@@ -342,8 +380,8 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
             puck.pos.add(puck.vel.cpy().scl((float) backTime));
             mallet.pos.add(mallet.vel.cpy().scl((float) backTime));
 
-            Log.d("Puck newVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
-            Log.d("Mallet newVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
+//            Log.d("Puck newVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
+//            Log.d("Mallet newVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
 
             // Small hack to make things more sane
             if (Float.isNaN(mallet.pos.x) || Float.isNaN(mallet.pos.y)) mallet.pos.set(tp);
