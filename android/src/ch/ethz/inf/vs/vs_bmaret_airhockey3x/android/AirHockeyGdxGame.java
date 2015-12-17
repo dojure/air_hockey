@@ -17,8 +17,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothComm;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothCommListener;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Message;
 
-public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcessor {
+public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcessor, BluetoothCommListener {
+
+    private final static String LOGTAG = "AirHockeyGdxGame";
 
     public static final boolean PHYSICS_MULTITHREAD_ENABLED = true; // Decouple physics from drawing (highly recommended)
     public static final int PHYSICS_TIMESTEP = 10; // Time in milliseconds between physics updates
@@ -440,4 +444,40 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
     public boolean scrolled(int amount) {
         return false;
     }
+
+    /**
+     *
+     * BluetoothComm callbacks
+     *
+     */
+
+
+
+    /**
+     * Handle incoming messages
+     * @param msg   Message
+     */
+    public void onReceiveMessage(Message msg)
+    {
+        String msgType = msg.getType();
+        Log.d(LOGTAG, "Received message with type " + msgType);
+        switch (msgType) {
+            case Message.TEST_MSG:
+                break;
+            case Message.PUCK_MOVEMENT_MSG:
+                break;
+            default:
+        }
+    }
+
+    public void onPlayerDisconnected(int pos) {}
+
+
+    public void onPlayerConnected(int pos, String name) {Log.d(LOGTAG,"Called unused callback - onPlayerConnected" );}
+    public void onDeviceFound(String name,String address) {Log.d(LOGTAG,"Called unused callback - onDeviceFound" );}
+    public void onStartConnecting() {Log.d(LOGTAG,"Called unused callback - onStartConnecting" );}
+    public void onScanDone() {Log.d(LOGTAG,"Called unused callback - onScanDone" );}
+    public void onNotDiscoverable() {Log.d(LOGTAG,"Called unused callback - onNotDiscoverable" );}
+    public void onBluetoothNotSupported() {Log.d(LOGTAG,"Called unused callback - onBluetoothNotSupported" );}
+
 }

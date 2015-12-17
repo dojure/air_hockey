@@ -2,6 +2,8 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message;
 
 import android.graphics.Point;
 
+import com.badlogic.gdx.math.Vector2;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -23,12 +25,18 @@ public class PuckMovementMessage extends Message {
     protected final static String ENTRY_POINT_KEY = "entry_point";
 
     // TODO: we can change this later if we need more or different information
+    /*
     double speed;
     Point entryPoint;
     Vector direction;
+    */
 
+    public Vector2 mPosition;
+    public Vector2 mVelocity;
+
+    /*
     public PuckMovementMessage(int receiverPos, Point entryPoint, Vector direction, double speed){
-        super(receiverPos, Message.MALLET_MOVEMENT_MSG);
+        super(receiverPos, Message.PUCK_MOVEMENT_MSG);
         this.speed = speed;
         this.entryPoint = entryPoint;
         this.direction = direction;
@@ -46,9 +54,20 @@ public class PuckMovementMessage extends Message {
         }
 
     }
+    */
+
+    public PuckMovementMessage(int receiverPos, Vector2 position, Vector2 velocity)
+    {
+        super(receiverPos,Message.PUCK_MOVEMENT_MSG);
+        mPosition = position;
+        mVelocity = velocity;
 
 
-    public PuckMovementMessage(Message msg){
+    }
+
+
+    public PuckMovementMessage(Message msg)
+    {
         super(msg);
     }
 

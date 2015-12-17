@@ -41,7 +41,6 @@ public class ACKSetupMessage extends Message {
             mBody = mMsg.getJSONObject(BODY_KEY);
             mAckCode = mBody.getInt(ACK_CODE_KEY);
         } catch (JSONException e) {e.printStackTrace();}
-
     }
 
     public int getAckCode() {return mAckCode;}

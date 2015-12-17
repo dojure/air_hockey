@@ -64,6 +64,7 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
 public class SetupActivityLeader extends AppCompatActivity
         implements View.OnClickListener, BluetoothCommListener {
 
+
     private final static String LOGTAG = "SetupActivityLeader";
 
     private Game mGame;

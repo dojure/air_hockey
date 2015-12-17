@@ -25,7 +25,7 @@ public class Message {
     public final static String INVITE_REMOTE_MSG = "invite_remote";
     public final static String READY_MSG = "ready_message";
     public final static String ACK_SETUP_MSG = "ack_setup";
-    public final static String MALLET_MOVEMENT_MSG = "mallet_movement";
+    public final static String PUCK_MOVEMENT_MSG = "puck_movement";
 
     // Use as position to broadcast
     public final static int BROADCAST = -2;
