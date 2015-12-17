@@ -16,9 +16,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
+import java.net.InetAddress;
+import java.util.Iterator;
+
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothComm;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothCommListener;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Message;
+import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.PuckMovementMessage;
 
 public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcessor, BluetoothCommListener {
 
@@ -451,8 +455,6 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
      *
      */
 
-
-
     /**
      * Handle incoming messages
      * @param msg   Message
@@ -465,6 +467,15 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
             case Message.TEST_MSG:
                 break;
             case Message.PUCK_MOVEMENT_MSG:
+                PuckMovementMessage pmsg = new PuckMovementMessage(msg);
+                float xpos = pmsg.getXPosition();
+                float ypos = pmsg.getYPosition();
+
+                Log.d(LOGTAG,"remote position: x " + Float.toString(xpos) + " y "
+                                + Float.toString(ypos));
+
+                // TODO: everything
+
                 break;
             default:
         }

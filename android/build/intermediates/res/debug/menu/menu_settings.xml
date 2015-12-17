@@ -5,4 +5,4 @@
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" app:showAsAction="never" />
 </menu>
-<!-- From: file:/C:/Users/Rimle/Documents/GitHub/air_hockey/android/res/menu/menu_settings.xml -->
+<!-- From: file:/Users/Valentin/Google%20Drive/ETH/HS15/DS/Project/air_hockey/android/res/menu/menu_settings.xml -->

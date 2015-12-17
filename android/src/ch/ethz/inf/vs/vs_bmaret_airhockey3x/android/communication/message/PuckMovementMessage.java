@@ -1,13 +1,11 @@
 package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message;
 
-import android.graphics.Point;
 
 import com.badlogic.gdx.math.Vector2;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Vector;
 
 /**
  * Created by Rimle on 09.12.2015.
@@ -19,58 +17,45 @@ import java.util.Vector;
 
 public class PuckMovementMessage extends Message {
 
-    // Keys occuring in msg
-    protected final static String SPEED_KEY = "speed";
-    protected final static String DIRECTION_KEY= "direction";
-    protected final static String ENTRY_POINT_KEY = "entry_point";
+    private final static String X_POSITION_KEY = "positionx";
+    private final static String Y_POSITION_KEY = "positiony";
 
-    // TODO: we can change this later if we need more or different information
-    /*
-    double speed;
-    Point entryPoint;
-    Vector direction;
-    */
 
-    public Vector2 mPosition;
-    public Vector2 mVelocity;
+    // I dont know it these two things suffice
+    private float mXPos;
+    private float mYPos;
 
-    /*
-    public PuckMovementMessage(int receiverPos, Point entryPoint, Vector direction, double speed){
-        super(receiverPos, Message.PUCK_MOVEMENT_MSG);
-        this.speed = speed;
-        this.entryPoint = entryPoint;
-        this.direction = direction;
+
+    public PuckMovementMessage(int receiverPos, float xpos, float ypos)
+    {
+        super(receiverPos,Message.ACK_SETUP_MSG);
+
+        mXPos = xpos;
+        mYPos = ypos;
 
         try {
             mBody = new JSONObject();
-            mBody.put(ENTRY_POINT_KEY, entryPoint);
-            mBody.put(DIRECTION_KEY, direction);
-            mBody.put(SPEED_KEY, speed);
-
-            mMsg.put(BODY_KEY, mBody);
-
+            mBody.put(X_POSITION_KEY, mXPos);
+            mBody.put(Y_POSITION_KEY, mYPos);
+            mMsg.put(BODY_KEY,mBody);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
-    */
-
-    public PuckMovementMessage(int receiverPos, Vector2 position, Vector2 velocity)
-    {
-        super(receiverPos,Message.PUCK_MOVEMENT_MSG);
-        mPosition = position;
-        mVelocity = velocity;
-
-
-    }
-
 
     public PuckMovementMessage(Message msg)
     {
         super(msg);
+        try {
+            mBody = new JSONObject();
+            mBody = mMsg.getJSONObject(BODY_KEY);
+            mXPos = new Double(mBody.getDouble(X_POSITION_KEY)).floatValue();
+            mYPos = new Double(mBody.getDouble(Y_POSITION_KEY)).floatValue();
+        } catch (JSONException e) {e.printStackTrace();}
     }
 
+    public float getXPosition() {return mXPos;}
+    public float getYPosition() {return mYPos;}
 
 
 }
