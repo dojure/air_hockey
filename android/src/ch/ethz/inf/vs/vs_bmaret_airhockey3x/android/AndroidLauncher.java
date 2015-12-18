@@ -13,10 +13,14 @@ package ch.ethz.inf.vs.vs_bmaret_airhockey3x.android;
         import com.badlogic.gdx.backends.android.surfaceview.RatioResolutionStrategy;
 
 public class AndroidLauncher extends FragmentActivity implements AndroidFragmentApplication.Callbacks {
+
+	public static FragmentActivity instance;
+
 	@Override
 	protected void onCreate (Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+        instance = this; // We store a reference to the single instance of this class here.
 		GameFragment fragment = new GameFragment();
 		FragmentTransaction trans = getSupportFragmentManager().beginTransaction();
 		trans.replace(android.R.id.content, fragment);
@@ -31,7 +35,6 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		{          AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
 			config.useImmersiveMode = true;
 			config.useWakelock = true;
-//			config.resolutionStrategy = new RatioResolutionStrategy(16,9);
 			return initializeForView(new AirHockeyGdxGame(), config);   }
 	}
 

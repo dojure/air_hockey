@@ -37,6 +37,10 @@ public class Player {
         else mName = name;
     }
     public String getName() {return mName;}
-    public void setScore(int score) {mScore = score;}
+    public boolean setScore(int score) {
+        boolean scored = score > mScore;
+        mScore = score;
+        return scored;
+    }
     public int getScore() {return mScore;}
 }

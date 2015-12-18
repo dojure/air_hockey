@@ -89,7 +89,7 @@ ADDED from AndroidManifest.xml:43:9
 		ADDED from AndroidManifest.xml:45:13
 	android:name
 		ADDED from AndroidManifest.xml:44:13
-activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SetupActivity
+activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SetupActivityFrozen
 ADDED from AndroidManifest.xml:51:9
 	android:screenOrientation
 		ADDED from AndroidManifest.xml:55:13
@@ -99,7 +99,7 @@ ADDED from AndroidManifest.xml:51:9
 		ADDED from AndroidManifest.xml:53:13
 	android:name
 		ADDED from AndroidManifest.xml:52:13
-activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SetupActivityFrozen
+activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SetupActivityLeader
 ADDED from AndroidManifest.xml:60:9
 	android:screenOrientation
 		ADDED from AndroidManifest.xml:64:13
@@ -109,13 +109,3 @@ ADDED from AndroidManifest.xml:60:9
 		ADDED from AndroidManifest.xml:62:13
 	android:name
 		ADDED from AndroidManifest.xml:61:13
-activity#ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SetupActivityLeader
-ADDED from AndroidManifest.xml:69:9
-	android:screenOrientation
-		ADDED from AndroidManifest.xml:73:13
-	android:label
-		ADDED from AndroidManifest.xml:72:13
-	android:configChanges
-		ADDED from AndroidManifest.xml:71:13
-	android:name
-		ADDED from AndroidManifest.xml:70:13

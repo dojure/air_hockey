@@ -29,6 +29,8 @@ public class Game {
     private int mNrPlayer;
     private Map<Integer,Player> mPlayers = new HashMap<>();
 
+    public boolean startWithPuck = true;
+
 
     private Game() {}
 

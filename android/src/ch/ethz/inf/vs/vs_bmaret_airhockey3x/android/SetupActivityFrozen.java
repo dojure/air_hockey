@@ -464,6 +464,7 @@ public class SetupActivityFrozen extends AppCompatActivity
             if (b) readyPlayers++;
         }
         if (readyPlayers == 3) { // TODO: Change for more players
+            mGame.startWithPuck = false; // Only the leader starts with a puck
             Intent i2 = new Intent(this, AndroidLauncher.class);
             startActivity(i2);
         }

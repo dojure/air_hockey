@@ -53,15 +53,6 @@
                 android:value="ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.MainActivity" />
         </activity>
         <activity
-            android:name="ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SetupActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|layoutDirection"
-            android:label="@string/title_activity_setup"
-            android:screenOrientation="landscape" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.MainActivity" />
-        </activity>
-        <activity
             android:name="ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.SetupActivityFrozen"
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|layoutDirection"
             android:label="@string/title_activity_setup"

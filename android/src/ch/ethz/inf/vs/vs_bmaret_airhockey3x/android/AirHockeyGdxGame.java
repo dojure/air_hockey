@@ -12,12 +12,13 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
-import java.net.InetAddress;
-import java.util.Iterator;
 import java.util.Random;
 
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothComm;
@@ -96,12 +97,17 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
     float h;
 
     float scaleFactor; // For screens that are not 1920x1080
-    private Pixmap pixmap;
     private Texture rail_img;
+    private BitmapFont fontBig;
+    private BitmapFont fontSmall;
+    private String displayText = "";
+    private long displayTime = 0;
+    private long displayDuration = 2000;
     private float railThickness;
     private float goalSize;
     private float leftGoalPost;
     private float rightGoalPost;
+    private int incomingPlayer = 0;
 
     class Circle {
         public Vector2 pos;
@@ -113,13 +119,12 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         boolean dragging;
         boolean previouslyDragging;
         boolean collided = false;
-        boolean messageSent = false;
 
-        public Circle(Vector2 p, Vector2 v) {
+        public Circle(Vector2 p) {
             pos = p;
-            vel = v;
+            vel = zero();
             img = new Texture("circle-256.png");
-            radius = 128;
+            radius = 128*scaleFactor;
             mass = 10;
         }
 
@@ -133,13 +138,8 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         }
 
         public void updatePosition(float d) {
-            // Check if we have NaN values
-            if (Float.isNaN(vel.x)) vel.x = 0;
-            if (Float.isNaN(vel.y)) vel.y = 0;
-
-            // Good checks to catch rare bugs
-            vel.clamp(0.000001f, 230400);
-            if (vel.isZero()) vel.set(0, 0.000001f);
+            // Check if we have NaN values, etc. Good checks to catch rare bugs.
+            check(vel);
 
             // Do the core update
             pos.x = pos.x + d * vel.x;
@@ -205,46 +205,71 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
                         }
                     }
                 }
-            }
 
-            // Process goals
-            if (!isMallet && pos.y < - radius) {
-                // Todo: Register goals
-                pos.set(w/2,h/2);
-                vel.set(0, 0.000001f);
-            }
+                // Process goals (still if !isMallet)
+                if (pos.y < -radius) {
 
-            // Process exiting the screen
-            if (!isMallet && pos.y > h + radius && !messageSent) {
+                    if(incomingPlayer != 0){
+                        updateScore(incomingPlayer);
+                    }
+                        pos.set(w / 2, h / 2);
+                        zero(vel);
+                        mallet.pos.set(w / 2, h / 2 - 300*scaleFactor);
+                        zero(mallet.vel);
 
-                Log.d("Exiting screen", "a");
+                    mallet.dragging = false;
 
-                if (pos.x+((2743*scaleFactor-pos.y)/vel.y)*vel.x < w/2){
-                    // Send to left player
-                    Log.d("","Send to left player");
-                    float new_pos_x = pos.x + 3282.76877526612220178634848784563747226509304365796540293357f;
-                    float new_pos_y = pos.y + 24.6925639128062614951789755868289218508851629423944608498642f;
-                    // Todo: Apply rotation, send message
-
-                    PuckMovementMessage pmsg = new PuckMovementMessage(1,new_pos_x,new_pos_y);
-                    mBC.sendMessage(pmsg);
-
-                } else {
-                    // Send to right player
-                    Log.d("","Send to right player");
-                    float new_pos_x = pos.x + 2855.30743608719373850482102441317107814911483705760553915013f;
-                    float new_pos_y = pos.y + 1620f;
-                    // Todo: Apply rotation, send message
-
-                    PuckMovementMessage pmsg = new PuckMovementMessage(3,new_pos_x,new_pos_y);
-                    mBC.sendMessage(pmsg);
+                    incomingPlayer = 0;
                 }
 
-                pos.set(w/2,h/2); // For testing
-                vel.set(0, 0.000001f);
+                // Process exiting the screen
+                if (pos.y > h + radius && puckStatus == PuckStatus.IN_PLAY) {
 
-                //messageSent = true;
+                    if (pos.x + ((2743 * scaleFactor - pos.y) / vel.y) * vel.x < w / 2) {
+                        // Send to left player
+
+                        // Compute rotation for new frame of reference
+                        float new_pos_x = pos.x * -0.5f - pos.y * 0.86602540378443864676372317075293618347140262690519031402790f;
+                        float new_pos_y = pos.x * 0.86602540378443864676372317075293618347140262690519031402790f + pos.y * -0.5f;
+
+                        float new_vel_x = vel.x * -0.5f - vel.y * 0.86602540378443864676372317075293618347140262690519031402790f;
+                        float new_vel_y = vel.x * 0.86602540378443864676372317075293618347140262690519031402790f + vel.y * -0.5f;
+
+                        // Compute translation
+                        new_pos_x += 2855.30743608719373850482102441317107814911483705760553915013f;
+                        new_pos_y += 1620f;
+
+                        PuckMovementMessage pmsg = new PuckMovementMessage(1, new_pos_x/scaleFactor, new_pos_y/scaleFactor, new_vel_x/scaleFactor, new_vel_y/scaleFactor);
+                        mBC.sendMessage(pmsg);
+                    } else {
+                        // Send to right player
+
+                        // Compute rotation for new frame of reference
+                        float new_pos_x = pos.x * -0.5f - pos.y * -0.86602540378443864676372317075293618347140262690519031402790f;
+                        float new_pos_y = pos.x * -0.86602540378443864676372317075293618347140262690519031402790f + pos.y * -0.5f;
+
+                        float new_vel_x = vel.x * -0.5f - vel.y * -0.86602540378443864676372317075293618347140262690519031402790f;
+                        float new_vel_y = vel.x * -0.86602540378443864676372317075293618347140262690519031402790f + vel.y * -0.5f;
+
+                        // Compute translation
+                        new_pos_x += 24.6925639128062614951789755868289218508851629423944608498642f;
+                        new_pos_y += 3282.76877526612220178634848784563747226509304365796540293357f;
+
+                        PuckMovementMessage pmsg = new PuckMovementMessage(3, new_pos_x/scaleFactor, new_pos_y/scaleFactor, new_vel_x/scaleFactor, new_vel_y/scaleFactor);
+                        mBC.sendMessage(pmsg);
+                    }
+
+                    puckStatus = PuckStatus.HANDED_OFF;
+                }
+
+                // Process entering the screen
+                if (pos.y < h + radius && puckStatus == PuckStatus.INCOMING) {
+                    puckStatus = PuckStatus.IN_PLAY;
+                }
             }
+
+            // Finally, let's do some checks again
+            check(vel);
         }
     }
 
@@ -260,28 +285,36 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
     long lastUpdate;
 
+    enum PuckStatus {
+        IN_PLAY, HANDED_OFF, INCOMING
+    }
+
+    PuckStatus puckStatus;
+
+    Random random = new Random();
+
     @Override
     public void create() {
 
         mBC = BluetoothComm.getInstance();
-        mBC.registerListener(this); // TODO: Deregister when leaving the game
+        mBC.registerListener(this);
         mGame = Game.getInstance();
 
         // TODO: delete this; This is only to test score messages
-        Random random = new Random();
-        new java.util.Timer().schedule(
-                new java.util.TimerTask() {
-                    @Override
-                    public void run() {
-                        TuplePlayerScore t1 = new TuplePlayerScore(mGame.getPlayer(0).getName(),5);
-                        TuplePlayerScore t2 = new TuplePlayerScore(mGame.getPlayer(1).getName(),2);
-                        TuplePlayerScore t3 = new TuplePlayerScore(mGame.getPlayer(3).getName(),5);
-                        ScoreMessage smsg = new ScoreMessage(Message.BROADCAST,t1,t2,t3);
-                        mBC.sendMessage(smsg);
-                    }
-                },
-                5000 + random.nextInt(200)
-        );
+
+//        new java.util.Timer().schedule(
+//                new java.util.TimerTask() {
+//                    @Override
+//                    public void run() {
+//                        TuplePlayerScore t1 = new TuplePlayerScore(mGame.getPlayer(0).getName(),5);
+//                        TuplePlayerScore t2 = new TuplePlayerScore(mGame.getPlayer(1).getName(),2);
+//                        TuplePlayerScore t3 = new TuplePlayerScore(mGame.getPlayer(3).getName(),5);
+//                        ScoreMessage smsg = new ScoreMessage(Message.BROADCAST,t1,t2,t3);
+//                        mBC.sendMessage(smsg);
+//                    }
+//                },
+//                5000 + random.nextInt(200)
+//        );
 
 
         w = Gdx.graphics.getWidth();
@@ -295,10 +328,17 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         rightGoalPost = w - (w - goalSize) / 2;
 
         // Puck, mallet initial properties
-        puck = new Circle(new Vector2(w / 2, h / 2), new Vector2(0, -1));
+        if(mGame.startWithPuck){
+            puck = new Circle(new Vector2(w / 2, h / 2));
+            puckStatus = PuckStatus.IN_PLAY;
+        } else {
+            puck = new Circle(new Vector2(w / 2, 3*h));
+            puckStatus = PuckStatus.HANDED_OFF;
+        }
         puck.radius = PUCK_RADIUS * scaleFactor;
         puck.mass = puck.radius * puck.radius;
-        mallet = new Circle(new Vector2(w / 2, h / 2 - 200), new Vector2(0, 1));
+
+        mallet = new Circle(new Vector2(w / 2, h / 2 - 300*scaleFactor));
         mallet.radius = MALLET_RADIUS * scaleFactor;
         mallet.mass = mallet.radius * mallet.radius;
         mallet.isMallet = true;
@@ -309,10 +349,19 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         camera.setToOrtho(false, w, h);
 
         // Prepare our rail textures
-        pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(RAIL_COLOR);
         pixmap.fill();
         rail_img = new Texture(pixmap);
+
+        // Set up fonts
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("NotoSans-Regular.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = Math.round(200*scaleFactor);
+        fontBig = generator.generateFont(parameter);
+        parameter.size = Math.round(30*scaleFactor);
+        fontSmall = generator.generateFont(parameter);
+        generator.dispose();
 
         // Enable touch input
         Gdx.input.setInputProcessor(this);
@@ -357,19 +406,68 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         puck.draw(batch);
         mallet.draw(batch);
 
-        //Draw rails
+        // Draw rails
         batch.draw(rail_img, 0, 0, railThickness, h);
         batch.draw(rail_img, w - railThickness, 0, railThickness, h);
         batch.draw(rail_img, 0, 0, leftGoalPost, railThickness);
         batch.draw(rail_img, rightGoalPost, 0, leftGoalPost, railThickness);
 
+        GlyphLayout glyphLayout = new GlyphLayout();
+
+        // Draw big text
+        if(isShowingText()) {
+            glyphLayout.setText(fontBig, displayText);
+            fontBig.draw(batch, glyphLayout, (w - glyphLayout.width) / 2, h - 150*scaleFactor);
+        }
+
+        // Draw scores
+        Player p0,p1,p3;
+        if ((p0 = mGame.getPlayer(0)) != null &&
+            (p1 = mGame.getPlayer(1)) != null &&
+            (p3 = mGame.getPlayer(3)) != null) {
+
+            glyphLayout.setText(fontSmall, p0.getName() + " " + p0.getScore());
+            fontSmall.draw(batch, glyphLayout, (w - glyphLayout.width - railThickness - 10 * scaleFactor), h - 10 * scaleFactor);
+
+            glyphLayout.setText(fontSmall, p1.getName() + " " + p1.getScore());
+            fontSmall.draw(batch, glyphLayout, (w - glyphLayout.width - railThickness - 10 * scaleFactor), h - 50 * scaleFactor);
+
+            glyphLayout.setText(fontSmall, p3.getName() + " " + p3.getScore());
+            fontSmall.draw(batch, glyphLayout, (w - glyphLayout.width - railThickness - 10 * scaleFactor), h - 90 * scaleFactor);
+        }
+
         batch.end();
+    }
+
+    public boolean isShowingText() {
+        return System.currentTimeMillis() <= displayTime + displayDuration;
+    }
+
+    public Vector2 zero(Vector2 vec){
+        // Set a vector to zero. (Well, almost)
+        return vec.set((float)random.nextGaussian()*0.0000000000001f,(float)random.nextGaussian()*0.0000000000001f);
+    }
+
+    public Vector2 zero(){
+        // Return a zero vector. (Well, almost)
+        return new Vector2((float)random.nextGaussian()*0.0000000000001f,(float)random.nextGaussian()*0.0000000000001f);
+    }
+
+    public void check(Vector2 vel){
+        // Check a velocity for abnormalities
+        if (Float.isNaN(vel.x) || vel.x == 0) vel.x = zeroFloat();
+        if (Float.isNaN(vel.y) || vel.y == 0) vel.y = zeroFloat();
+        vel.clamp(0.000001f, 230400);
+    }
+
+    public float zeroFloat(){
+        // Return an almost zero float
+        return (float)random.nextGaussian()*0.0000000000001f;
     }
 
     @Override
     public void dispose() {
 
-        // TODO: This code goes into function that gets called when leaving the game. Right place here?
         /*
             Tell the others to exit too. We do it simple and stop the entire game as soon as one
             leaves
@@ -380,6 +478,10 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
     }
 
+    /**
+     * Compute a step of phyics
+     * @param d Timestep in seconds
+     */
     private void update(float d) {
         // Physics units: pixels (on a 1080x1920 screen), seconds
 
@@ -387,8 +489,15 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
         lastUpdate = System.nanoTime();
 
-        // Calculate touch point position and velocity
+
+        // Touch point
         Vector2 tp = new Vector2(tp3.x, tp3.y);
+
+        // Correct touch point
+        if (tp.y < mallet.radius + railThickness) tp.y = mallet.radius + railThickness;
+        if (tp.x < mallet.radius + railThickness) tp.x = mallet.radius + railThickness;
+        if (tp.x > w - mallet.radius - railThickness) tp.x = w - mallet.radius - railThickness;
+
         Vector2 tp_vel = tp.cpy();
         tp_vel.sub(mallet.pos);
         tp_vel.scl(1 / d);
@@ -397,7 +506,7 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
             mallet.vel.set(tp_vel);
             if (!mallet.previouslyDragging) {
                 mallet.pos.set(tp);
-                mallet.vel.set(0, 0.000001f);
+                zero(mallet.vel);
             }
         }
 
@@ -413,7 +522,7 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         mallet.updatePosition(d);
 
         // Move mallet to the touch point (which is frowned upon nowadays)
-        // if (mallet.dragging) mallet.pos.set(tp);
+        //if (mallet.dragging) mallet.pos.set(tp);
 
         // Calculate other, more boring collisions
         puck.processCollisions(d);
@@ -421,8 +530,8 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
         // This whole next section is to resolve collisions between the puck and the mallet
         if (mallet.pos.dst(puck.pos) < mallet.radius + puck.radius) {
-//            Log.d("Puck oldVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
-//            Log.d("Mallet oldVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
+            Log.d("Puck oldVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
+            Log.d("Mallet oldVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
 
             // Turn back time to when they weren't intersecting
             double backTimeRoot = 0.5 * Math.sqrt(4 * Math.pow(puck.pos.x * (puck.vel.x - mallet.vel.x) +
@@ -468,11 +577,13 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
             puck.pos.add(puck.vel.cpy().scl((float) backTime));
             mallet.pos.add(mallet.vel.cpy().scl((float) backTime));
 
-//            Log.d("Puck newVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
-//            Log.d("Mallet newVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
+            Log.d("Puck newVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
+            Log.d("Mallet newVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
 
             // Small hack to make things more sane
-            if (Float.isNaN(mallet.pos.x) || Float.isNaN(mallet.pos.y)) mallet.pos.set(tp);
+            if (Float.isNaN(mallet.pos.x) || Float.isNaN(mallet.pos.y)) {mallet.pos.set(tp); Log.d("Oh crap","Had to use the force");} // TODO: YEAH
+            check(mallet.vel);
+            check(puck.vel);
         }
 
         // Keep track of some stuff for the next update
@@ -552,8 +663,11 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         TuplePlayerScore t2 = new TuplePlayerScore(p1.getName(),p1.getScore());
         TuplePlayerScore t3 = new TuplePlayerScore(p3.getName(),p3.getScore());
 
+        displayText = luckyOne.getName() + " scored!";
+
         ScoreMessage smsg = new ScoreMessage(Message.BROADCAST,t1,t2,t3);
         mBC.sendMessage(smsg);
+        onReceiveMessage(smsg);
     }
 
     /**
@@ -578,11 +692,14 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
                 break;
             case Message.PUCK_MOVEMENT_MSG:
                 PuckMovementMessage pmsg = new PuckMovementMessage(msg);
-                float xpos = pmsg.getXPosition();
-                float ypos = pmsg.getYPosition();
+                puck.pos.x = pmsg.getXPosition()*scaleFactor;
+                puck.pos.y = pmsg.getYPosition()*scaleFactor;
+                puck.vel.x = pmsg.getXVelocity()*scaleFactor;
+                puck.vel.y = pmsg.getYVelocity()*scaleFactor;
 
-                Log.d(LOGTAG,"remote position: x " + Float.toString(xpos) + " y "
-                                + Float.toString(ypos));
+                puckStatus = PuckStatus.INCOMING;
+                incomingPlayer = pmsg.getSender();
+
                 break;
             case Message.SCORE_MSG:
 
@@ -594,8 +711,8 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
                 int score1 = smsg.getPlayerScore1();
                 int score2 = smsg.getPlayerScore2();
                 Log.d(LOGTAG,"Score of players");
-                Log.d(LOGTAG,player0 + ": " + score0);
-                Log.d(LOGTAG,player1 + ": " + score1);
+                Log.d(LOGTAG, player0 + ": " + score0);
+                Log.d(LOGTAG, player1 + ": " + score1);
                 Log.d(LOGTAG, player2 + ": " + score2);
 
                 // Save score
@@ -603,9 +720,17 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
                 Player p1 = mGame.getPlayer(player1);
                 Player p2 = mGame.getPlayer(player2);
 
-                if(p0 != null)  p0.setScore(score0);
-                if(p1 != null)  p1.setScore(score1);
-                if(p2 != null)  p2.setScore(score2);
+                if(p0 != null)  if(p0.setScore(score0)) displayText = player0 + " scored!";
+                if(p1 != null)  if(p1.setScore(score1)) displayText = player1 + " scored!";
+                if(p2 != null)  if(p2.setScore(score2)) displayText = player2 + " scored!";
+
+                if (displayText.equals(mGame.getPlayer(0).getName() + " scored!")) displayText = "You scored!";
+
+                displayTime = System.currentTimeMillis();
+
+                zero(puck.vel);
+                zero(mallet.vel);
+
 
 
                 break;
@@ -613,8 +738,8 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
                 Log.d(LOGTAG, "Going to exit game because player received a exit message from player "
                         + Integer.toString(msg.getSender()));
-                // TODO: Exit game
 
+                AndroidLauncher.instance.finish();
 
                 break;
             default:
@@ -631,7 +756,7 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         mGame.getPlayer(pos).setName(null);
         mGame.getPlayer(pos).setConnected(false);
 
-        // TODO: Exit game
+        AndroidLauncher.instance.finish();
     }
 
 
