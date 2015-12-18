@@ -111,7 +111,8 @@
             android:layout_alignParentTop="true"
             android:textSize="10sp"
             android:layout_alignStart="@+id/player1_btn"
-            android:layout_alignEnd="@+id/player1_btn" />
+            android:layout_alignEnd="@+id/player1_btn"
+            android:visibility="gone" />
 
         <Button
             style="?android:attr/buttonStyleSmall"
@@ -122,7 +123,8 @@
             android:textSize="10sp"
             android:layout_alignParentTop="true"
             android:layout_alignEnd="@+id/player3_btn"
-            android:layout_toEndOf="@+id/player2_btn" />
+            android:layout_toEndOf="@+id/player2_btn"
+            android:visibility="gone" />
 
         <ProgressBar
             android:layout_width="wrap_content"
