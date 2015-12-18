@@ -54,7 +54,6 @@ public class Message {
 
     protected Message(int receiver, String type)
     {
-        // TODO: Check input
         mType = type;
         mReceiver = receiver;
         mSender = 4 - receiver;
@@ -76,7 +75,6 @@ public class Message {
      */
     public Message(byte[] bytes, int noBytes)
     {
-        // TODO: Check input
         try {
             if (bytes != null && bytes.length != 0) {
                 String tmp = new String(bytes, 0, noBytes, "UTF-8");
@@ -95,7 +93,6 @@ public class Message {
     // Used in subclasses, when they want "cast" a Message Object to their specific type
     protected Message(Message msg)
     {
-        // TODO: Check input
         try {
             mMsg = msg.toJSON();
             mHeader = mMsg.getJSONObject(HEADER_KEY);

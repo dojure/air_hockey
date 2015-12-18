@@ -46,9 +46,6 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-//        Button btn_save = (Button)findViewById(R.id.btn_save);
-//        btn_save.setOnClickListener(this);
-
         EditText inputName = (EditText) findViewById(R.id.input_device_name);
         TextView.OnEditorActionListener okListener = new TextView.OnEditorActionListener() {
             @Override

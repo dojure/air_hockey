@@ -23,14 +23,6 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.Remote
  *
  * This class is a Singleton. That way we can easyily keep the connections and other communication
  * related state during all the activities.
- *
- * TODO s (in addition the others already in the code)
- * 2. Could change the names (for the list) to only the name of the device rather than the name and
- *      the address
- * 3. Test pairing from within the application. For some devices it works and for some not.. Maybe
- *      some hidden Bluetooth preferences that i'm not aware of. In the worst case we can still pair
- *      all devices BEFORE we start the app. Also sometimes when the 'other two' are not paired yet,
- *      they might not connect
  */
 public class BluetoothComm implements BluetoothServicesListener {
 
@@ -110,9 +102,6 @@ public class BluetoothComm implements BluetoothServicesListener {
             // If this is not successful exit.
             if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
                 Log.d(LOGTAG, "Bluetooth not enabled or not supported");
-
-                // TODO: Exit gracefully if Bluetooth is not supported
-                // TODO: If Bluetooth is just not enabled, prompt a dialog to enable it
 
                 mListener.onBluetoothNotSupported();
 
@@ -202,9 +191,6 @@ public class BluetoothComm implements BluetoothServicesListener {
      */
     public void stop()
     {
-        // TODO: Cleanup when done -> maybe something about the bluetooth callback
-        // Also figure out a good place to call this
-
         mCurrentPlayerPos = -1;
         mBS.reset();
     }
@@ -216,7 +202,6 @@ public class BluetoothComm implements BluetoothServicesListener {
      */
     public void listen(Boolean enable)
     {
-        // TODO: Rethink the what to do when enable is false
         Log.d(LOGTAG, "Enable listening: " + Boolean.toString(enable));
         if (enable) mBS.listen();
         //else mBS.stop();

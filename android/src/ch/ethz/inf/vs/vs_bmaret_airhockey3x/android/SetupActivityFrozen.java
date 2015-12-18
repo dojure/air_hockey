@@ -43,16 +43,6 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
  * 3. One (!) user presses PLAY button and invites the other two
  *      the other do nothing and wait until all is good
  *
- *
- * TODO: IMPORTANT !!
- * 1. Test cases where users press buttons out of the ordinary protocol
- * 2. Test case where two users go to the setup screen and try to invite other users -> Can only have one leader
- * 3. Test pairing within the app -> does not always work. In worst case can still pair everyone before
- *        starting the app
- * 4. When everyone ticket the ready checkbox, go to gameActivity
- * 5. The buttons are ImageButtons up until now. It suffices for them to be normal buttons
- * 6. When leaving the setupScreen all progress is lost on the screen (but not in BluetootComm
- * since it is a singleton) Do something about that
  */
 
 
@@ -183,8 +173,6 @@ public class SetupActivityFrozen extends AppCompatActivity
         super.onDestroy();
         Log.d(LOGTAG, "onDestroy");
         mBC.stop();
-
-        // TODO: More cleanup ?
     }
 
     @Override
@@ -463,7 +451,7 @@ public class SetupActivityFrozen extends AppCompatActivity
         for (boolean b : mReadyCounters) {
             if (b) readyPlayers++;
         }
-        if (readyPlayers == 3) { // TODO: Change for more players
+        if (readyPlayers == 3) {
             mGame.startWithPuck = false; // Only the leader starts with a puck
             Intent i2 = new Intent(this, AndroidLauncher.class);
             startActivity(i2);
@@ -477,8 +465,6 @@ public class SetupActivityFrozen extends AppCompatActivity
      */
     private void handleAckMessage(ACKSetupMessage ack)
     {
-        // TODO: Is this alright? Should we handle something in here?
-
         if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
 
             runOnUiThread(new Runnable() {

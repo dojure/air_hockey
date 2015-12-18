@@ -15,7 +15,7 @@ public class Player {
 
     private final int mPosition;
     private int mScore;
-    private boolean mConnected = false; // TODO: Must be updated when connection lost
+    private boolean mConnected = false;
     private String mName = defaultName;
 
     public Player(int pos)

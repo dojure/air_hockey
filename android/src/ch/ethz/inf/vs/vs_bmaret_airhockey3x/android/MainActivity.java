@@ -149,7 +149,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void startSetupActivityFrozen(int pos, String name){
         // Connected to leader (he sent an invite message) -> directly go to frozen setup screen
         Intent i0 = new Intent(this, SetupActivityFrozen.class);
-        //i0.putExtra(SetupActivity.ACTIVE,false);
         i0.putExtra(SetupActivityFrozen.INVITER_POS, pos);
         i0.putExtra(SetupActivityFrozen.INVITER_NAME,name);
         startActivity(i0);
@@ -159,25 +158,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     {
         final int position = pos;
         Log.d(LOGTAG, "Connection lost");
-        /*
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-                alertDialog.setTitle(R.string.connection_lost_title);
-                String errorMsg = getString(R.string.connection_lost_message1) + " player "
-                        + Integer.toString(position) + getString(R.string.connection_lost_message2);
-                alertDialog.setMessage(errorMsg);
-                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        });
-                alertDialog.show();
-            }
-        });
-        */
     }
 
     // Callbacks not needed

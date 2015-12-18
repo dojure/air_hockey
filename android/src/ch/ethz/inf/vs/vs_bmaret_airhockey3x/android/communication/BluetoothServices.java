@@ -20,7 +20,6 @@ import java.util.UUID;
  * This class handles all the connections with Bluetooth devices. This includes
  * connecting to devices, listening for incoming connections and transmitting data.
  *
- * TODO: IMPORTANT !! Error handling and testing
  */
 public class BluetoothServices {
 
@@ -90,8 +89,6 @@ public class BluetoothServices {
      */
     public synchronized String setPosForLastConnectedDevice(int pos)
     {
-        // TODO: Some sanity check would be good.
-
         // Assuming only the last is not matched
         boolean found = false;
         String address = null;
@@ -118,8 +115,6 @@ public class BluetoothServices {
      */
     public synchronized void setPosForAddress(int pos, String deviceAddress)
     {
-        // TODO: Some sanity check would be good.
-
         Log.d(LOGTAG,"Set address " + deviceAddress + " for device at position " + Integer.toString(pos));
         mPositionToAddressMap.put(new Integer(pos), deviceAddress);
     }
@@ -241,15 +236,12 @@ public class BluetoothServices {
     {
         Log.d(LOGTAG,"Stop and reset everything");
 
-        // TODO: Make sure this gets called somewhere appropriate
-
         // Cancel any threads currently trying to establish connection to other
         if (mConnectThread != null) {
             mConnectThread.cancel();
             mConnectThread = null;
         }
         // Cancel all threads doing transmissions - closes also all sockets in mSocketsMap
-        // TODO: WHY IS THIS EMPTY ??
         Log.d(LOGTAG,"Check on mTransmissionThreadMap in reset() " + Boolean.toString(mTransmissionThreadMap.isEmpty()));
         for (TransmissionThread t : mTransmissionThreadMap.values()) {
             if (t != null) t.cancel();
@@ -260,7 +252,6 @@ public class BluetoothServices {
             mListenThread = null;
         }
 
-        // TODO: Maybe a bit harsh?
         mPendingMessages.clear();
         mSocketsMap.clear();
         mTransmissionThreadMap.clear();
@@ -275,7 +266,6 @@ public class BluetoothServices {
      */
     public void unregisterListener(BluetoothServicesListener listener)
     {
-        // TODO: Make sure that this gets called at an appropriate place
         if (mListener == listener) { // Must be same mListener of course
             mListener = null;
         }
@@ -283,12 +273,6 @@ public class BluetoothServices {
 
     /**
      * Handle connection failure.
-     *
-     * TODO: IMPORTANT !!
-     * Figure out where we can have connection errors. -> In all three thread below probably
-     * A connection error may arise due to different reasons. for example one player is not reachable
-     * or he disables bluetooth etc.
-     * Handle them properly. We probably need to inform the listener too
      */
     private synchronized void connectionFailed(String address)
     {
@@ -329,12 +313,6 @@ public class BluetoothServices {
         */
     }
 
-
-    /**
-     * Threads
-     *
-     * TODO: IMPORTANT !! Error handling and testing
-     */
 
 
     /**
@@ -378,7 +356,6 @@ public class BluetoothServices {
         public void cancel()
         {
             Log.d(LOGTAG,"Cancel ListenThread");
-            // TODO: Cleanup
         }
     }
 
@@ -427,7 +404,6 @@ public class BluetoothServices {
         public void cancel()
         {
             Log.d(LOGTAG,"Cancel ConnectThread");
-            // TODO: Cleanup ?
         }
 
     }
@@ -484,7 +460,6 @@ public class BluetoothServices {
         {
             Log.d(LOGTAG,"Start TransmissionThread");
 
-            // TODO: Reasonable size for the array?
             byte[] buf = new byte[1024];
 
             // Receiving
@@ -496,8 +471,7 @@ public class BluetoothServices {
                     }
                 } catch (IOException e) {
                     connectionFailed(mAddress);
-                    //listen(); // TODO: yes? no? Call connectionerror?
-                    //e.printStackTrace();
+
                     return;
                 }
             }

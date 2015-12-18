@@ -32,6 +32,9 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
 
 /**
  * Game Logic
+ *
+ * This is a LibGDX game running inside a fragment activity.
+ *
  */
 
 public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcessor, BluetoothCommListener {
@@ -266,23 +269,6 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
         mBC.registerListener(this);
         mGame = Game.getInstance();
 
-        // TODO: delete this; This is only to test score messages
-
-//        new java.util.Timer().schedule(
-//                new java.util.TimerTask() {
-//                    @Override
-//                    public void run() {
-//                        TuplePlayerScore t1 = new TuplePlayerScore(mGame.getPlayer(0).getName(),5);
-//                        TuplePlayerScore t2 = new TuplePlayerScore(mGame.getPlayer(1).getName(),2);
-//                        TuplePlayerScore t3 = new TuplePlayerScore(mGame.getPlayer(3).getName(),5);
-//                        ScoreMessage smsg = new ScoreMessage(Message.BROADCAST,t1,t2,t3);
-//                        mBC.sendMessage(smsg);
-//                    }
-//                },
-//                5000 + random.nextInt(200)
-//        );
-
-
         w = Gdx.graphics.getWidth();
         h = Gdx.graphics.getHeight();
 
@@ -338,12 +324,8 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
             public void run() {
                 long time;
                 while (true) {
-//                    time = System.nanoTime();
                     SystemClock.sleep(PHYSICS_TIMESTEP);
-//                    Log.d("Sleep took", Long.toString(System.nanoTime() - time));
-//                    time = System.nanoTime();
                     update(PHYSICS_TIMESTEP / 1000f);
-//                    Log.d("Update took", Long.toString(System.nanoTime() - time));
                 }
             }
         };
@@ -496,8 +478,6 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
 
         // This whole next section is to resolve collisions between the puck and the mallet
         if (mallet.pos.dst(puck.pos) < mallet.radius + puck.radius) {
-            Log.d("Puck oldVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
-            Log.d("Mallet oldVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
 
             // Turn back time to when they weren't intersecting
             double backTimeRoot = 0.5 * Math.sqrt(4 * Math.pow(puck.pos.x * (puck.vel.x - mallet.vel.x) +
@@ -543,11 +523,8 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
             puck.pos.add(puck.vel.cpy().scl((float) backTime));
             mallet.pos.add(mallet.vel.cpy().scl((float) backTime));
 
-            Log.d("Puck newVel:", String.format("%f,%f", puck.vel.x, puck.vel.y));
-            Log.d("Mallet newVel:", String.format("%f,%f", mallet.vel.x, mallet.vel.y));
-
             // Small hack to make things more sane
-            if (Float.isNaN(mallet.pos.x) || Float.isNaN(mallet.pos.y)) {mallet.pos.set(tp); Log.d("Oh crap","Had to use the force");} // TODO: YEAH
+            if (Float.isNaN(mallet.pos.x) || Float.isNaN(mallet.pos.y)) mallet.pos.set(tp);
             check(mallet.vel);
             check(puck.vel);
         }
@@ -648,9 +625,6 @@ public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcess
      */
     public void onReceiveMessage(Message msg)
     {
-
-        // TODO: Everything
-
         String msgType = msg.getType();
         Log.d(LOGTAG, "Received message with type " + msgType);
         switch (msgType) {

@@ -58,7 +58,6 @@ public class Game {
      */
     public Player getPlayer(int position)
     {
-        // TODO: Check if position is valid (consistent with mPlayerNr)
         if (position > 3 && position < 0) return null;
         return mPlayers.get(position);
     }

@@ -43,21 +43,11 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
  * Protocol (Real world):
  *
  * Up until now only this works -> Must still make it fool proof
- * 1. All users mutst have bluetooth enabled
+ * 1. All users must have bluetooth enabled
  * 2. All users open app
  * 3. One (!) user presses PLAY button and invites the other two
  *      the other do nothing and wait until all is good
  *
- *
- * TODO: IMPORTANT !!
- * 1. Test cases where users press buttons out of the ordinary protocol
- * 2. Test case where two users go to the setup screen and try to invite other users -> Can only have one leader
- * 3. Test pairing within the app -> does not always work. In worst case can still pair everyone before
- *        starting the app
- * 4. When everyone ticket the ready checkbox, go to gameActivity
- * 5. The buttons are ImageButtons up until now. It suffices for them to be normal buttons
- * 6. When leaving the setupScreen all progress is lost on the screen (but not in BluetootComm
- * since it is a singleton) Do something about that
  */
 
 
@@ -76,9 +66,6 @@ public class SetupActivityLeader extends AppCompatActivity
     private boolean[] mSetupEnteredAcks = new boolean[4];
     private boolean[] mSetupAllConnectedAcks = new boolean[4];
     private boolean[] mReadyCounters = new boolean[4];
-    //private int mSetupEnteredACKReceived = 0;
-    //private int mSetupAllConnectedAcksReceived = 0;
-    //private int mReadyCounter = 0;
 
 
     @Override
@@ -112,8 +99,6 @@ public class SetupActivityLeader extends AppCompatActivity
         b = (Button) findViewById(R.id.broadcast_button);
         b.setOnClickListener(this);
 
-        // TODO: Ask user how many players -> only when want to do more than 3
-        //showDialog();
 
         // Initialize the ListView
         // Callback for clicking on ListView
@@ -146,12 +131,6 @@ public class SetupActivityLeader extends AppCompatActivity
         mBC.setNoConnections(mGame.getNrPlayer());
         mBC.registerListener(this);
 
-        /*
-        //TODO: this is for onResume()
-        TextView ownName = (TextView)findViewById(R.id.player0_name);
-        ownName.setText(mBC.getDeviceName());
-        */
-
         scan(true); // Scan for devices
         setEnableListView(false);
     }
@@ -179,8 +158,6 @@ public class SetupActivityLeader extends AppCompatActivity
         super.onDestroy();
         Log.d(LOGTAG, "onDestroy");
         mBC.stop();
-
-        // TODO: More cleanup ?
     }
 
     @Override
@@ -290,7 +267,6 @@ public class SetupActivityLeader extends AppCompatActivity
     public void onNotDiscoverable() {Log.d(LOGTAG, "Unused callback called");}
 
     /**
-     * TODO: Could also only put name into list. This would also imply changes in BluetoothComm
      *
      * New device was found -> need to put into list
      * @param name     Name
@@ -424,10 +400,6 @@ public class SetupActivityLeader extends AppCompatActivity
         mGame.getPlayer(pos).setConnected(false);
         mGame.getPlayer(pos).setName(null);
 
-        // TODO: Think about this
-        //mReadyCounter = Math.max(0,mReadyCounter -1);
-        //mSetupAllConnectedAcksReceived = Math.max(0,mSetupAllConnectedAcksReceived -1);
-        //mSetupEnteredACKReceived = Math.max(0,mSetupEnteredACKReceived -1);
         mSetupAllConnectedAcks[pos] = false;
         mSetupEnteredAcks[pos] = false;
         mReadyCounters[pos] = false;
@@ -524,7 +496,7 @@ public class SetupActivityLeader extends AppCompatActivity
             if (b) readyPlayers++;
         }
         Log.d(LOGTAG,Integer.toString(readyPlayers) + " players are ready");
-        if (readyPlayers == 3) { // TODO: Change for more players
+        if (readyPlayers == 3) {
             mGame.startWithPuck = true; // Only the leader starts with a puck
             Intent i2 = new Intent(this, AndroidLauncher.class);
             startActivity(i2);
@@ -548,7 +520,7 @@ public class SetupActivityLeader extends AppCompatActivity
             }
             if (ackno == mGame.getNrPlayer()-1) {
                 Log.d(LOGTAG,"All other players have entered the setup screen -> start remote inviting");
-                mBC.remoteInvite(1,3); // TODO: Make general this is only for three players
+                mBC.remoteInvite(1,3);
             }
         } else if (ack.getAckCode() == ACKSetupMessage.ALL_CONNECTED) {
             Log.d(LOGTAG,"Received ALL_CONNECTED ack from player " + ack.getSender());
@@ -695,7 +667,6 @@ public class SetupActivityLeader extends AppCompatActivity
         if (p != null)  Log.d(LOGTAG,"Setting current player: " + Integer.toString(p.getPosition()));
         else Log.d(LOGTAG, "Set current player to null");
 
-        // TODO: Do we still need special functionality for this
         mCurrentPlayer = p; // Even if -1
     }
 
