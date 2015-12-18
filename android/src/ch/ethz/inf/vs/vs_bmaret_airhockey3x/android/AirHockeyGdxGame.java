@@ -30,43 +30,9 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.message.ScoreM
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Game;
 import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.game.Player;
 
-
 /**
- *
- * Notes for etienne
- *
- * 1. We created a PuckMovementMessage to inform the other player about his puck. Currently there are
- * only two float values available for the position (x,y). If you need another two for velocity add them
- * the same way as the position values
- *
- * 2. Scores: We store the scores in the players which are in the mGame instance. Use updateScore()
- * to update the scores. It updates the local value and broadcasts a message to all others. We thought it
- * best that just the player who sent the puck gets one point. There are no "eigengoal" during the game.
- * -> What to do when we start and make an eigengoal; who gets the point?
- *
- * 3. Could not test if it works to leave the game and reenter, because we dont now how to /**
- *
- * Notes for etienne
- *
- * 1. We created a PuckMovementMessage to inform the other player about his puck. Currently there are
- * only two float values available for the position (x,y). If you need another two for velocity add them
- * the same way as the position values
- *
- * 2. Scores: We store the scores in the players which are in the mGame instance. Use updateScore()
- * to update the scores. It updates the local value and broadcasts a message to all others. We thought it
- * best that just the player who sent the puck gets one point. There are no "eigengoal" during the game.
- * -> What to do when we start and make an eigengoal; who gets the point?
- *
- * 3. Could not test if it works to leave the game and reenter, because we didnt know how to leave the game in
- * code (for example in onPlayerDisconnected() or when received an exitGame message)
- *
- * 4. As soon as one leaves the game all should leave. We broadcast an exit_game message in dispose()
- * and in onPlayerDisconnected()
- *
- * 5. Dont forget to remove buttons in setupactivities
+ * Game Logic
  */
-
-
 
 public class AirHockeyGdxGame extends ApplicationAdapter implements InputProcessor, BluetoothCommListener {
 

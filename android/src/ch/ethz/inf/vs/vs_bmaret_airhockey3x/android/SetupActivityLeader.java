@@ -525,6 +525,7 @@ public class SetupActivityLeader extends AppCompatActivity
         }
         Log.d(LOGTAG,Integer.toString(readyPlayers) + " players are ready");
         if (readyPlayers == 3) { // TODO: Change for more players
+            mGame.startWithPuck = true; // Only the leader starts with a puck
             Intent i2 = new Intent(this, AndroidLauncher.class);
             startActivity(i2);
         }

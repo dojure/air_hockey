@@ -26,7 +26,7 @@ import ch.ethz.inf.vs.vs_bmaret_airhockey3x.android.communication.BluetoothComm;
  * The most important reason for this Activity up until now is to store the players user name to
  * SharedPreferences. Further settings?
  *
- * TODO: Everything
+ *
  */
 
 
